@@ -1132,6 +1132,23 @@
     window.visualViewport.addEventListener("scroll", fitModalToViewport);
   }
 
+  (function bindQuickFieldFocusScroll(){
+    var sheet = document.querySelector("#quickAddOverlay .modal-sheet");
+    if (!sheet) return;
+    var fields = sheet.querySelectorAll("input, select");
+    for (var i = 0; i < fields.length; i++){
+      fields[i].addEventListener("focus", function(){
+        var el = this;
+        [50, 150, 300, 500].forEach(function(delay){
+          setTimeout(function(){
+            fitModalToViewport();
+            el.scrollIntoView({block: "center", behavior: "smooth"});
+          }, delay);
+        });
+      });
+    }
+  })();
+
   function openQuickAdd(){
     quickType = "expense";
     document.getElementById("quickAmount").value = "";
