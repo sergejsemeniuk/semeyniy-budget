@@ -385,7 +385,7 @@
     var d = new Date();
     return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
   }
-  var MONTH_NAMES = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+  var MONTH_NAMES = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
   function monthLabel(key){
     var parts = key.split("-");
     var y = parts[0], m = parseInt(parts[1],10) - 1;
