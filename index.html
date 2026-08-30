@@ -238,6 +238,25 @@
     border:1px solid var(--line);border-radius:16px;cursor:pointer;
   }
   .year-pill.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .stats-toggle{
+    display:flex;align-items:center;justify-content:space-between;
+    width:100%;background:none;border:none;cursor:pointer;
+    padding:12px 14px;font-size:13.5px;font-weight:700;color:var(--ink);
+    font-family:inherit;
+  }
+  .stats-toggle .chev{color:var(--ink-soft);font-size:10px;}
+  .stats-toggle:active{background:var(--surface);}
+  .stats-body{padding:0 14px 14px;border-top:1px solid var(--line);}
+  .period-toggle{
+    display:flex;gap:4px;margin:12px 0 10px;
+    background:var(--surface);padding:3px;border-radius:999px;
+  }
+  .period-btn{
+    flex:1;padding:7px 10px;font-size:12px;font-weight:600;
+    color:var(--ink-soft);background:none;border:none;
+    border-radius:999px;cursor:pointer;font-family:inherit;
+  }
+  .period-btn.active{background:var(--accent);color:#fff;}
   .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
   .metric{
     background:var(--card);border:1px solid var(--line);border-radius:16px;
@@ -327,7 +346,6 @@
     <button data-tab="income">Доходы</button>
     <button data-tab="expenses">Расходы</button>
     <button data-tab="savings">Сбережения</button>
-    <button data-tab="year">Год</button>
   </nav>
 
   <main id="content"></main>
@@ -653,18 +671,31 @@
       + '<div class="breakdown-row"><span class="name">Текущий баланс накоплений</span><span class="nums" style="font-weight:700;">'+fmt(sumBalance(state.data.savings))+'</span></div>'
       + '</div>';
 
+    html += '<div class="card">'
+      + '<button class="stats-toggle" data-action="toggle-stats">'
+      + '<span>Статистика</span><span class="chev">'+(state.statsOpen ? "▲" : "▼")+'</span>'
+      + '</button>'
+      + (state.statsOpen ? '<div class="stats-body">'+renderStatsPanel()+'</div>' : '')
+      + '</div>';
+
     return html;
   }
 
-  function renderYear(){
-    var years = Array.from(new Set(state.meta.months.map(function(k){ return k.split("-")[0]; }))).sort();
-    if (!state.year || years.indexOf(state.year) === -1) state.year = state.month.split("-")[0];
-
-    var monthsInYear = state.meta.months.filter(function(k){ return k.split("-")[0] === state.year; }).sort();
-
+  function monthsForYear(year){
+    return state.meta.months.filter(function(k){ return k.split("-")[0] === year; }).sort();
+  }
+  function monthsForQuarter(year, q){
+    var startMonth = (q - 1) * 3 + 1, endMonth = q * 3;
+    return state.meta.months.filter(function(k){
+      var parts = k.split("-");
+      var y = parts[0], m = parseInt(parts[1], 10);
+      return y === year && m >= startMonth && m <= endMonth;
+    }).sort();
+  }
+  function computePeriodStats(monthKeys){
     var totalIncome = 0, totalExpense = 0, totalSavings = 0;
     var best = null, worst = null;
-    monthsInYear.forEach(function(key){
+    monthKeys.forEach(function(key){
       var d = remote.months[key];
       if (!d) return;
       var inc = sumList(d.income).fact;
@@ -675,43 +706,68 @@
       if (!best || leftover > best.leftover) best = {key:key, leftover:leftover};
       if (!worst || leftover < worst.leftover) worst = {key:key, leftover:leftover};
     });
-    var count = monthsInYear.length || 1;
-    var avgIncome = totalIncome / count;
-    var avgExpense = totalExpense / count;
-    var totalLeftover = totalIncome - totalExpense - totalSavings;
+    var count = monthKeys.length || 1;
+    return {
+      totalIncome: totalIncome, totalExpense: totalExpense, totalSavings: totalSavings,
+      avgIncome: totalIncome / count, avgExpense: totalExpense / count,
+      totalLeftover: totalIncome - totalExpense - totalSavings,
+      best: best, worst: worst, count: monthKeys.length
+    };
+  }
 
-    var html = "";
+  function renderStatsPanel(){
+    var years = Array.from(new Set(state.meta.months.map(function(k){ return k.split("-")[0]; }))).sort();
+    if (!state.statsYear || years.indexOf(state.statsYear) === -1) state.statsYear = state.month.split("-")[0];
+    if (!state.statsPeriod) state.statsPeriod = "year";
+    if (!state.statsQuarter) state.statsQuarter = Math.floor((parseInt(state.month.split("-")[1], 10) - 1) / 3) + 1;
+
+    var monthKeys = state.statsPeriod === "year"
+      ? monthsForYear(state.statsYear)
+      : monthsForQuarter(state.statsYear, state.statsQuarter);
+    var s = computePeriodStats(monthKeys);
+    var periodLabel = state.statsPeriod === "year" ? "год" : "квартал";
+
+    var html = '<div class="period-toggle">'
+      + '<button class="period-btn' + (state.statsPeriod === "year" ? " active" : "") + '" data-action="stats-period" data-period="year">Год</button>'
+      + '<button class="period-btn' + (state.statsPeriod === "quarter" ? " active" : "") + '" data-action="stats-period" data-period="quarter">Квартал</button>'
+      + '</div>';
+
     if (years.length > 1){
       html += '<div class="year-pills">' + years.map(function(y){
-        return '<button class="year-pill' + (y === state.year ? " active" : "") + '" data-action="select-year" data-year="' + y + '">' + y + '</button>';
+        return '<button class="year-pill' + (y === state.statsYear ? " active" : "") + '" data-action="stats-year" data-year="' + y + '">' + y + '</button>';
+      }).join("") + '</div>';
+    }
+    if (state.statsPeriod === "quarter"){
+      html += '<div class="year-pills">' + [1,2,3,4].map(function(q){
+        return '<button class="year-pill' + (q === state.statsQuarter ? " active" : "") + '" data-action="stats-quarter" data-q="' + q + '">Q' + q + '</button>';
       }).join("") + '</div>';
     }
 
     html += '<div class="metric-grid">'
-      + '<div class="metric"><div class="lbl">Доходы за год</div><div class="val">' + fmt(totalIncome) + '</div></div>'
-      + '<div class="metric"><div class="lbl">Расходы за год</div><div class="val">' + fmt(totalExpense) + '</div></div>'
-      + '<div class="metric"><div class="lbl">Средние доходы/мес</div><div class="val">' + fmt(avgIncome) + '</div></div>'
-      + '<div class="metric"><div class="lbl">Средние расходы/мес</div><div class="val">' + fmt(avgExpense) + '</div></div>'
+      + '<div class="metric"><div class="lbl">Доходы за ' + periodLabel + '</div><div class="val">' + fmt(s.totalIncome) + '</div></div>'
+      + '<div class="metric"><div class="lbl">Расходы за ' + periodLabel + '</div><div class="val">' + fmt(s.totalExpense) + '</div></div>'
+      + '<div class="metric"><div class="lbl">Средние доходы/мес</div><div class="val">' + fmt(s.avgIncome) + '</div></div>'
+      + '<div class="metric"><div class="lbl">Средние расходы/мес</div><div class="val">' + fmt(s.avgExpense) + '</div></div>'
       + '</div>';
 
-    html += '<div class="card"><div class="card-head"><h3>Итог за год</h3></div>'
-      + '<div class="breakdown-row"><span class="name">Остаток после сбережений</span><span class="nums" style="font-weight:700;color:' + (totalLeftover >= 0 ? "var(--positive)" : "var(--negative)") + ';">' + fmtSigned(totalLeftover) + '</span></div>'
-      + '<div class="breakdown-row"><span class="name">Отложено в сбережения</span><span class="nums">' + fmt(totalSavings) + '</span></div>'
-      + '<div class="breakdown-row"><span class="name">Месяцев с данными</span><span class="nums">' + monthsInYear.length + '</span></div>'
+    html += '<div class="card"><div class="card-head"><h3>Итог за ' + periodLabel + '</h3></div>'
+      + '<div class="breakdown-row"><span class="name">Остаток после сбережений</span><span class="nums" style="font-weight:700;color:' + (s.totalLeftover >= 0 ? "var(--positive)" : "var(--negative)") + ';">' + fmtSigned(s.totalLeftover) + '</span></div>'
+      + '<div class="breakdown-row"><span class="name">Отложено в сбережения</span><span class="nums">' + fmt(s.totalSavings) + '</span></div>'
+      + '<div class="breakdown-row"><span class="name">Месяцев с данными</span><span class="nums">' + s.count + '</span></div>'
       + '</div>';
 
-    if (best){
+    if (s.best){
       html += '<div class="card"><div class="card-head"><h3>Лучший месяц</h3></div>'
-        + '<div class="breakdown-row"><span class="name">' + monthLabel(best.key) + '</span><span class="nums" style="font-weight:700;color:var(--positive);">' + fmtSigned(best.leftover) + '</span></div>'
+        + '<div class="breakdown-row"><span class="name">' + monthLabel(s.best.key) + '</span><span class="nums" style="font-weight:700;color:var(--positive);">' + fmtSigned(s.best.leftover) + '</span></div>'
         + '</div>';
     }
-    if (worst && worst.key !== (best && best.key)){
+    if (s.worst && (!s.best || s.worst.key !== s.best.key)){
       html += '<div class="card"><div class="card-head"><h3>Худший месяц</h3></div>'
-        + '<div class="breakdown-row"><span class="name">' + monthLabel(worst.key) + '</span><span class="nums" style="font-weight:700;color:var(--negative);">' + fmtSigned(worst.leftover) + '</span></div>'
+        + '<div class="breakdown-row"><span class="name">' + monthLabel(s.worst.key) + '</span><span class="nums" style="font-weight:700;color:var(--negative);">' + fmtSigned(s.worst.leftover) + '</span></div>'
         + '</div>';
     }
-    if (!monthsInYear.length){
-      html += '<div class="empty">Нет данных за этот год</div>';
+    if (!monthKeys.length){
+      html += '<div class="empty">Нет данных за этот период</div>';
     }
 
     return html;
@@ -728,7 +784,6 @@
     else if (state.tab === "income") content.innerHTML = renderIncome();
     else if (state.tab === "expenses") content.innerHTML = renderExpenses();
     else if (state.tab === "savings") content.innerHTML = renderSavings();
-    else if (state.tab === "year") content.innerHTML = renderYear();
   }
 
   /* ---------- mutation helpers ---------- */
@@ -934,8 +989,17 @@
     if (!btn) return;
     var action = btn.dataset.action;
 
-    if (action === "select-year"){
-      state.year = btn.dataset.year;
+    if (action === "toggle-stats"){
+      state.statsOpen = !state.statsOpen;
+      render();
+    } else if (action === "stats-period"){
+      state.statsPeriod = btn.dataset.period;
+      render();
+    } else if (action === "stats-year"){
+      state.statsYear = btn.dataset.year;
+      render();
+    } else if (action === "stats-quarter"){
+      state.statsQuarter = parseInt(btn.dataset.q, 10);
       render();
     } else if (action === "add-income"){
       state.data.income.push({id:uid(), name:"", plan:0, fact:0});
