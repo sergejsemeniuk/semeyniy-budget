@@ -72,6 +72,58 @@
   .flow-value{font-size:21px;font-weight:700;letter-spacing:-0.3px;font-variant-numeric:tabular-nums;}
   .flow-value.income{color:var(--income);}
   .flow-value.expense{color:var(--expense);}
+  .quick-add-btn{
+    flex:0 0 auto;align-self:center;
+    width:38px;height:38px;border-radius:50%;
+    background:var(--accent);color:#fff;border:none;
+    font-size:22px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    padding:0 0 2px;
+  }
+  .quick-add-btn:active{opacity:0.85;}
+
+  .modal-overlay{
+    position:fixed;inset:0;z-index:100;
+    background:rgba(23,25,35,0.45);
+    display:flex;align-items:flex-end;justify-content:center;
+  }
+  .modal-overlay.hidden{display:none;}
+  .modal-sheet{
+    width:100%;max-width:560px;
+    background:var(--card);
+    border-radius:24px 24px 0 0;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+  }
+  .modal-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:14px;}
+  .modal-type-toggle{
+    display:flex;gap:6px;background:var(--surface);
+    padding:4px;border-radius:999px;margin-bottom:16px;
+  }
+  .modal-type-btn{
+    flex:1;padding:9px;border-radius:999px;border:none;
+    background:none;font-weight:600;font-size:13px;
+    color:var(--ink-soft);cursor:pointer;font-family:inherit;
+  }
+  .modal-type-btn.expense.active{background:var(--expense);color:#fff;}
+  .modal-type-btn.income.active{background:var(--income);color:#fff;}
+  .modal-field{margin-bottom:12px;}
+  .modal-field label{
+    display:block;font-size:11.5px;color:var(--ink-soft);
+    margin-bottom:4px;font-weight:600;
+  }
+  .modal-field input, .modal-field select{
+    width:100%;padding:10px 12px;border:1px solid var(--line);
+    border-radius:10px;font-size:14px;background:var(--card);
+    color:var(--ink);font-family:inherit;
+  }
+  .modal-actions{display:flex;gap:10px;margin-top:6px;}
+  .modal-actions button{
+    flex:1;padding:11px;border-radius:10px;
+    font-size:13.5px;font-weight:700;cursor:pointer;border:none;
+    font-family:inherit;
+  }
+  .modal-cancel{background:var(--surface);color:var(--ink-soft);}
+  .modal-submit{background:var(--accent);color:#fff;}
 
   .balance-card{
     position:relative;z-index:1;overflow:hidden;
@@ -316,6 +368,7 @@
         <span class="flow-label">Расходы</span>
         <strong class="flow-value expense" id="statExpense">0,00 €</strong>
       </div>
+      <button class="quick-add-btn" id="quickAddBtn" aria-label="Быстро добавить">+</button>
     </div>
 
     <div class="balance-card">
@@ -352,6 +405,33 @@
 
   <div class="footnote">Данные синхронизируются через общий облачный аккаунт — доступ есть только у тех, кто знает секретный код приложения.</div>
 </div>
+
+<div class="modal-overlay hidden" id="quickAddOverlay">
+  <div class="modal-sheet">
+    <div class="modal-title">Быстро добавить</div>
+    <div class="modal-type-toggle">
+      <button class="modal-type-btn expense active" id="quickTypeExpense" data-type="expense">Расход</button>
+      <button class="modal-type-btn income" id="quickTypeIncome" data-type="income">Доход</button>
+    </div>
+    <div class="modal-field">
+      <label for="quickAmount">Сумма, €</label>
+      <input type="number" step="0.01" inputmode="decimal" id="quickAmount" placeholder="0.00">
+    </div>
+    <div class="modal-field">
+      <label for="quickName">Статья</label>
+      <input type="text" id="quickName" placeholder="Например: Такси">
+    </div>
+    <div class="modal-field" id="quickCategoryField">
+      <label for="quickCategory">Категория</label>
+      <select id="quickCategory"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="quickCancel">Отмена</button>
+      <button class="modal-submit" id="quickSubmit">Добавить</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -1025,6 +1105,63 @@
       lists.forEach(function(l){ removeItem(l, id); });
       scheduleSaveMonth(); render();
     }
+  });
+
+  /* ---------- quick add ---------- */
+  var quickType = "expense";
+
+  function openQuickAdd(){
+    quickType = "expense";
+    document.getElementById("quickAmount").value = "";
+    document.getElementById("quickName").value = "";
+    updateQuickTypeUI();
+    populateQuickCategories();
+    document.getElementById("quickAddOverlay").classList.remove("hidden");
+    document.getElementById("quickAmount").focus();
+  }
+  function closeQuickAdd(){
+    document.getElementById("quickAddOverlay").classList.add("hidden");
+  }
+  function updateQuickTypeUI(){
+    document.getElementById("quickTypeExpense").classList.toggle("active", quickType === "expense");
+    document.getElementById("quickTypeIncome").classList.toggle("active", quickType === "income");
+    document.getElementById("quickCategoryField").style.display = quickType === "expense" ? "block" : "none";
+  }
+  function populateQuickCategories(){
+    var sel = document.getElementById("quickCategory");
+    var cats = Object.keys(state.data.expenses);
+    sel.innerHTML = cats.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
+  }
+
+  document.getElementById("quickAddBtn").addEventListener("click", openQuickAdd);
+  document.getElementById("quickCancel").addEventListener("click", closeQuickAdd);
+  document.getElementById("quickAddOverlay").addEventListener("click", function(e){
+    if (e.target.id === "quickAddOverlay") closeQuickAdd();
+  });
+  document.getElementById("quickTypeExpense").addEventListener("click", function(){
+    quickType = "expense"; updateQuickTypeUI();
+  });
+  document.getElementById("quickTypeIncome").addEventListener("click", function(){
+    quickType = "income"; updateQuickTypeUI();
+  });
+  document.getElementById("quickSubmit").addEventListener("click", function(){
+    var amount = num(document.getElementById("quickAmount").value);
+    var name = document.getElementById("quickName").value.trim();
+    if (amount <= 0){ showToast("Введите сумму"); return; }
+    if (!name){ showToast("Введите статью"); return; }
+
+    if (quickType === "income"){
+      state.data.income.push({id:uid(), name:name, plan:0, fact:amount});
+    } else {
+      var cats = Object.keys(state.data.expenses);
+      if (!cats.length){ showToast("Сначала добавьте категорию расходов"); return; }
+      var cat = document.getElementById("quickCategory").value || cats[0];
+      state.data.expenses[cat].push({id:uid(), name:name, plan:0, fact:amount});
+    }
+    scheduleSaveMonth();
+    closeQuickAdd();
+    render();
+    showToast("Добавлено");
   });
 
   /* ---------- init ---------- */
