@@ -368,6 +368,27 @@
     font-size:11px;color:var(--ink-soft);text-align:center;
     padding:10px 20px 4px;line-height:1.5;
   }
+  .history-btn{
+    display:flex;align-items:center;justify-content:center;
+    width:26px;height:26px;margin:10px auto 24px;
+    border-radius:50%;border:none;background:none;
+    color:var(--ink-soft);opacity:0.45;cursor:pointer;
+    padding:0;
+  }
+  .history-btn:active{opacity:0.8;}
+  .history-btn svg{width:15px;height:15px;}
+  .history-row{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;padding:11px 2px;border-top:1px solid var(--line);
+  }
+  .history-row:first-child{border-top:none;}
+  .history-row span{font-size:13px;color:var(--ink);}
+  .history-restore{
+    flex:0 0 auto;border:1px solid var(--accent);color:var(--accent);
+    background:none;border-radius:8px;padding:6px 11px;
+    font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  .history-restore.armed{background:var(--negative);border-color:var(--negative);color:#fff;}
   .toast{
     position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
     background:var(--accent-deep);color:#fff;
@@ -503,6 +524,22 @@
   <main id="content"></main>
 
   <div class="footnote">Данные синхронизируются через общий облачный аккаунт — доступ есть только у тех, кто знает секретный код приложения.</div>
+  <button class="history-btn" id="historyBtn" aria-label="История изменений" title="История изменений">
+    <svg viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+</div>
+
+<div class="modal-overlay hidden" id="historyOverlay">
+  <div class="modal-sheet">
+    <div class="modal-title">История изменений</div>
+    <div id="historyList"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="historyClose" style="flex:1;">Закрыть</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay hidden" id="quickAddOverlay">
@@ -555,6 +592,8 @@
   var fbApp = initializeApp(firebaseConfig);
   var db = getFirestore(fbApp);
   var docRef = doc(db, "budgets", SECRET_CODE);
+  var historyRef = doc(db, "budgets_history", SECRET_CODE);
+  var HISTORY_LIMIT = 30;
 
   (function(){
   "use strict";
@@ -681,12 +720,30 @@
       return null;
     }catch(e){ return null; }
   }
-  async function persistRemote(){
+  var historyCache = null;
+  async function archiveHistory(oldPayload){
     try{
-      var payload = JSON.stringify(remote);
+      if (!historyCache){
+        var snap = await getDoc(historyRef);
+        historyCache = (snap.exists() && snap.data().versions) ? snap.data().versions : [];
+      }
+      historyCache.push({ts: Date.now(), payload: oldPayload});
+      if (historyCache.length > HISTORY_LIMIT){
+        historyCache = historyCache.slice(historyCache.length - HISTORY_LIMIT);
+      }
+      await setDoc(historyRef, { versions: historyCache });
+    }catch(e){ /* history is best-effort, fail silently */ }
+  }
+  async function persistRemote(){
+    var payload = JSON.stringify(remote);
+    var previousPayload = lastSavedPayload;
+    try{
       lastSavedPayload = payload;
       await setDoc(docRef, { payload: payload, updatedAt: Date.now() });
-    }catch(e){ showToast("Не удалось сохранить онлайн"); }
+    }catch(e){ showToast("Не удалось сохранить онлайн"); return; }
+    if (previousPayload && previousPayload !== payload){
+      archiveHistory(previousPayload);
+    }
   }
   async function loadMeta(){
     remote = await fetchRemote();
@@ -694,6 +751,7 @@
       remote = defaultRemote();
       await persistRemote();
     }
+    lastSavedPayload = JSON.stringify(remote);
     return remote.meta;
   }
   async function saveMeta(){
@@ -1403,6 +1461,93 @@
     closeQuickAdd();
     render();
     showToast("Добавлено");
+  });
+
+  /* ---------- history ---------- */
+  var armedRestoreTs = null;
+  var armedRestoreTimer = null;
+
+  function formatHistoryDate(ts){
+    var d = new Date(ts);
+    var datePart = d.toLocaleDateString("ru-RU", {day:"numeric", month:"short"});
+    var timePart = d.toLocaleTimeString("ru-RU", {hour:"2-digit", minute:"2-digit"});
+    return datePart + ", " + timePart;
+  }
+
+  async function openHistory(){
+    var overlay = document.getElementById("historyOverlay");
+    var list = document.getElementById("historyList");
+    list.innerHTML = '<div class="empty">Загрузка…</div>';
+    overlay.classList.remove("hidden");
+    fitModalToViewport();
+
+    var versions = [];
+    try{
+      var snap = await getDoc(historyRef);
+      versions = (snap.exists() && snap.data().versions) ? snap.data().versions : [];
+    }catch(e){}
+
+    if (!versions.length){
+      list.innerHTML = '<div class="empty">История пока пуста</div>';
+      return;
+    }
+    var sorted = versions.slice().sort(function(a,b){ return b.ts - a.ts; });
+    list.innerHTML = sorted.map(function(v){
+      return '<div class="history-row">'
+        + '<span>' + formatHistoryDate(v.ts) + '</span>'
+        + '<button class="history-restore" data-action="restore-history" data-ts="' + v.ts + '">Восстановить</button>'
+        + '</div>';
+    }).join("");
+    list.dataset.raw = JSON.stringify(sorted);
+  }
+  function closeHistory(){
+    document.getElementById("historyOverlay").classList.add("hidden");
+  }
+
+  document.getElementById("historyBtn").addEventListener("click", openHistory);
+  document.getElementById("historyClose").addEventListener("click", closeHistory);
+  document.getElementById("historyOverlay").addEventListener("click", function(e){
+    if (e.target.id === "historyOverlay") closeHistory();
+  });
+
+  document.getElementById("historyList").addEventListener("click", async function(e){
+    var btn = e.target.closest('[data-action="restore-history"]');
+    if (!btn) return;
+    var ts = btn.dataset.ts;
+
+    if (armedRestoreTs !== ts){
+      armedRestoreTs = ts;
+      clearTimeout(armedRestoreTimer);
+      armedRestoreTimer = setTimeout(function(){
+        armedRestoreTs = null;
+        btn.textContent = "Восстановить";
+        btn.classList.remove("armed");
+      }, 3000);
+      btn.textContent = "Точно?";
+      btn.classList.add("armed");
+      return;
+    }
+
+    clearTimeout(armedRestoreTimer);
+    armedRestoreTs = null;
+
+    var raw = JSON.parse(document.getElementById("historyList").dataset.raw || "[]");
+    var version = raw.filter(function(v){ return String(v.ts) === ts; })[0];
+    if (!version) return;
+
+    try{
+      remote = JSON.parse(version.payload);
+    }catch(err){ showToast("Не удалось прочитать версию"); return; }
+
+    state.meta = remote.meta;
+    state.month = state.meta.current || state.meta.months[0];
+    if (!remote.months[state.month]) state.month = state.meta.months[0];
+    state.data = remote.months[state.month];
+
+    scheduleSaveMonth();
+    closeHistory();
+    render();
+    showToast("Восстановлено");
   });
 
   /* ---------- init ---------- */
