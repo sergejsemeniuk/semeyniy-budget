@@ -196,6 +196,8 @@
     font-variant-numeric:tabular-nums;
   }
   .row input:focus{outline:2px solid var(--accent);outline-offset:0;}
+  .row.over{background:var(--negative-bg);}
+  .row.over input[type=number]{background:#fff;}
   .diff{font-size:12px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;}
   .diff.pos{color:var(--positive);}
   .diff.neg{color:var(--negative);}
@@ -564,10 +566,13 @@
     document.getElementById("mainBalance").textContent = fmtSigned(leftover);
   }
 
-  function rowHTML(it, extraCols){
+  function rowHTML(it, kind){
     var diff = num(it.fact) - num(it.plan);
-    var diffClass = diff >= 0 ? "pos" : "neg";
-    return '<div class="row" data-id="'+it.id+'">'
+    var isExpense = kind === "expense";
+    var over = isExpense && num(it.fact) > num(it.plan);
+    var diffClass = isExpense ? (over ? "neg" : "pos") : (diff >= 0 ? "pos" : "neg");
+    var rowClass = "row" + (over ? " over" : "");
+    return '<div class="'+rowClass+'" data-id="'+it.id+'">'
       + '<input type="text" data-field="name" data-id="'+it.id+'" value="'+esc(it.name)+'" placeholder="Статья">'
       + '<input type="number" step="0.01" inputmode="decimal" data-field="plan" data-id="'+it.id+'" value="'+it.plan+'">'
       + '<input type="number" step="0.01" inputmode="decimal" data-field="fact" data-id="'+it.id+'" value="'+it.fact+'">'
@@ -576,10 +581,10 @@
       + '</div>';
   }
 
-  function listCardHTML(title, list, addAction, addLabel){
+  function listCardHTML(title, list, addAction, addLabel, kind){
     var t = sumList(list);
     var rows = list.length
-      ? list.map(function(it){ return rowHTML(it); }).join("")
+      ? list.map(function(it){ return rowHTML(it, kind); }).join("")
       : '<div class="empty">Пока нет статей</div>';
     return '<div class="card">'
       + '<div class="card-head"><h3>'+esc(title)+'</h3>'
@@ -591,13 +596,13 @@
   }
 
   function renderIncome(){
-    return listCardHTML("Доходы", state.data.income, "add-income", "Добавить доход");
+    return listCardHTML("Доходы", state.data.income, "add-income", "Добавить доход", "income");
   }
 
   function renderExpenses(){
     var html = "";
     Object.keys(state.data.expenses).forEach(function(cat){
-      html += listCardHTML(cat, state.data.expenses[cat], "add-expense", "Добавить статью");
+      html += listCardHTML(cat, state.data.expenses[cat], "add-expense", "Добавить статью", "expense");
       html = html.replace(/data-action="add-expense"(?![^>]*data-cat)/, 'data-action="add-expense" data-cat="'+esc(cat)+'"');
     });
     html += '<div class="card" style="padding:12px;">'
@@ -866,11 +871,19 @@
     var field = el.dataset.field;
     if (!id || !field) return;
 
-    var lists = [state.data.income, state.data.savings];
-    Object.keys(state.data.expenses).forEach(function(cat){ lists.push(state.data.expenses[cat]); });
+    var lists = [
+      {list: state.data.income, kind: "income"},
+      {list: state.data.savings, kind: "savings"}
+    ];
+    Object.keys(state.data.expenses).forEach(function(cat){
+      lists.push({list: state.data.expenses[cat], kind: "expense"});
+    });
 
-    var item = null;
-    for (var i=0;i<lists.length;i++){ item = findItem(lists[i], id); if (item) break; }
+    var item = null, itemKind = null;
+    for (var i=0;i<lists.length;i++){
+      item = findItem(lists[i].list, id);
+      if (item){ itemKind = lists[i].kind; break; }
+    }
     if (!item) return;
 
     if (field === "name") item.name = el.value;
@@ -894,7 +907,13 @@
         var diff = num(item.fact) - num(item.plan);
         var span = row.querySelector(".diff");
         span.textContent = fmtSigned(diff);
-        span.className = "diff " + (diff >= 0 ? "pos" : "neg");
+        if (itemKind === "expense"){
+          var over = num(item.fact) > num(item.plan);
+          span.className = "diff " + (over ? "neg" : "pos");
+          row.classList.toggle("over", over);
+        } else {
+          span.className = "diff " + (diff >= 0 ? "pos" : "neg");
+        }
       }
     }
 
