@@ -388,11 +388,14 @@
   <div class="lock-error" id="lockError"></div>
   <button class="lock-btn" id="lockBtn">Войти</button>
 </div>
+
+<div class="app locked" id="appRoot">
 <script>
 (function(){
   var PIN_CODE = "2293";
   var LOCK_KEY = "familyBudgetUnlocked";
   var lockScreen = document.getElementById("lockScreen");
+  var appRoot = document.getElementById("appRoot");
   var input = document.getElementById("lockInput");
   var errorEl = document.getElementById("lockError");
 
@@ -401,7 +404,7 @@
 
   if (unlocked){
     lockScreen.classList.add("hidden");
-    document.getElementById("appRoot").classList.remove("locked");
+    appRoot.classList.remove("locked");
   } else {
     input.focus();
   }
@@ -410,7 +413,7 @@
     if (input.value === PIN_CODE){
       try{ window.localStorage.setItem(LOCK_KEY, "1"); }catch(e){}
       lockScreen.classList.add("hidden");
-      document.getElementById("appRoot").classList.remove("locked");
+      appRoot.classList.remove("locked");
     } else {
       input.classList.add("error");
       errorEl.textContent = "Неверный код, попробуйте ещё раз";
@@ -430,8 +433,6 @@
   });
 })();
 </script>
-
-<div class="app locked" id="appRoot">
   <header class="app-header">
     <div class="header-top">
       <div class="header-title">
