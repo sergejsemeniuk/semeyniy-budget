@@ -417,13 +417,17 @@
       <label for="quickAmount">Сумма, €</label>
       <input type="number" step="0.01" inputmode="decimal" id="quickAmount" placeholder="0.00">
     </div>
-    <div class="modal-field">
-      <label for="quickName">Статья</label>
-      <input type="text" id="quickName" placeholder="Например: Такси">
-    </div>
     <div class="modal-field" id="quickCategoryField">
       <label for="quickCategory">Категория</label>
       <select id="quickCategory"></select>
+    </div>
+    <div class="modal-field">
+      <label for="quickName">Статья</label>
+      <select id="quickName"></select>
+    </div>
+    <div class="modal-field" id="quickNameNewField" style="display:none;">
+      <label for="quickNameNew">Новая статья</label>
+      <input type="text" id="quickNameNew" placeholder="Например: Такси">
     </div>
     <div class="modal-actions">
       <button class="modal-cancel" id="quickCancel">Отмена</button>
@@ -1113,9 +1117,10 @@
   function openQuickAdd(){
     quickType = "expense";
     document.getElementById("quickAmount").value = "";
-    document.getElementById("quickName").value = "";
+    document.getElementById("quickNameNew").value = "";
     updateQuickTypeUI();
     populateQuickCategories();
+    populateQuickNames();
     document.getElementById("quickAddOverlay").classList.remove("hidden");
     document.getElementById("quickAmount").focus();
   }
@@ -1132,6 +1137,26 @@
     var cats = Object.keys(state.data.expenses);
     sel.innerHTML = cats.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
   }
+  function populateQuickNames(){
+    var sel = document.getElementById("quickName");
+    var names;
+    if (quickType === "income"){
+      names = state.data.income.map(function(it){ return it.name; }).filter(Boolean);
+    } else {
+      var cat = document.getElementById("quickCategory").value;
+      var list = state.data.expenses[cat] || [];
+      names = list.map(function(it){ return it.name; }).filter(Boolean);
+    }
+    var unique = Array.from(new Set(names));
+    var options = unique.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join("");
+    options += '<option value="__new__">+ Новая статья</option>';
+    sel.innerHTML = options;
+    toggleQuickNewField();
+  }
+  function toggleQuickNewField(){
+    var sel = document.getElementById("quickName");
+    document.getElementById("quickNameNewField").style.display = sel.value === "__new__" ? "block" : "none";
+  }
 
   document.getElementById("quickAddBtn").addEventListener("click", openQuickAdd);
   document.getElementById("quickCancel").addEventListener("click", closeQuickAdd);
@@ -1139,15 +1164,21 @@
     if (e.target.id === "quickAddOverlay") closeQuickAdd();
   });
   document.getElementById("quickTypeExpense").addEventListener("click", function(){
-    quickType = "expense"; updateQuickTypeUI();
+    quickType = "expense"; updateQuickTypeUI(); populateQuickNames();
   });
   document.getElementById("quickTypeIncome").addEventListener("click", function(){
-    quickType = "income"; updateQuickTypeUI();
+    quickType = "income"; updateQuickTypeUI(); populateQuickNames();
   });
+  document.getElementById("quickCategory").addEventListener("change", populateQuickNames);
+  document.getElementById("quickName").addEventListener("change", toggleQuickNewField);
   document.getElementById("quickSubmit").addEventListener("click", function(){
     var amount = num(document.getElementById("quickAmount").value);
-    var name = document.getElementById("quickName").value.trim();
     if (amount <= 0){ showToast("Введите сумму"); return; }
+
+    var nameSel = document.getElementById("quickName");
+    var name = nameSel.value === "__new__"
+      ? document.getElementById("quickNameNew").value.trim()
+      : nameSel.value;
     if (!name){ showToast("Введите статью"); return; }
 
     if (quickType === "income"){
