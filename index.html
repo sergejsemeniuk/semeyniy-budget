@@ -222,8 +222,13 @@
   .card-head .totals{
     font-size:11.5px;color:var(--ink-soft);
     font-variant-numeric:tabular-nums;
-    display:flex;gap:8px;
+    display:flex;align-items:center;gap:8px;
   }
+  .cat-delete{
+    background:none;border:none;color:var(--ink-soft);
+    font-size:15px;line-height:1;cursor:pointer;padding:0 0 0 2px;
+  }
+  .cat-delete:active{color:var(--negative);}
   .row-head{
     display:grid;
     grid-template-columns:1fr 70px 70px 24px;
@@ -857,14 +862,17 @@
       + '</div>';
   }
 
-  function listCardHTML(title, list, addAction, addLabel, kind){
+  function listCardHTML(title, list, addAction, addLabel, kind, catName){
     var t = sumList(list);
     var rows = list.length
       ? list.map(function(it){ return rowHTML(it, kind); }).join("")
       : '<div class="empty">Пока нет статей</div>';
+    var canDeleteCat = kind === "expense" && catName && list.length === 0;
     return '<div class="card">'
       + '<div class="card-head"><h3>'+esc(title)+'</h3>'
-      + '<div class="totals"><span>план '+fmt(t.plan)+'</span><span>факт '+fmt(t.fact)+'</span></div></div>'
+      + '<div class="totals"><span>план '+fmt(t.plan)+'</span><span>факт '+fmt(t.fact)+'</span>'
+      + (canDeleteCat ? '<button class="cat-delete" data-action="delete-category" data-cat="'+esc(catName)+'" aria-label="Удалить категорию" title="Удалить категорию">×</button>' : '')
+      + '</div></div>'
       + (list.length ? '<div class="row-head"><span>Статья</span><span>План</span><span>Факт</span><span></span></div>' : '')
       + rows
       + '<button class="add-row" data-action="'+addAction+'">+ '+esc(addLabel)+'</button>'
@@ -878,7 +886,7 @@
   function renderExpenses(){
     var html = "";
     Object.keys(state.data.expenses).forEach(function(cat){
-      html += listCardHTML(cat, state.data.expenses[cat], "add-expense", "Добавить статью", "expense");
+      html += listCardHTML(cat, state.data.expenses[cat], "add-expense", "Добавить статью", "expense", cat);
       html = html.replace(/data-action="add-expense"(?![^>]*data-cat)/, 'data-action="add-expense" data-cat="'+esc(cat)+'"');
     });
     html += '<div class="card" style="padding:12px;">'
@@ -1282,6 +1290,16 @@
       if (state.data.expenses[name]){ showToast("Такая категория уже есть"); return; }
       state.data.expenses[name] = [];
       scheduleSaveMonth(); render();
+    } else if (action === "delete-category"){
+      var catToDelete = btn.dataset.cat;
+      if (!state.data.expenses[catToDelete] || state.data.expenses[catToDelete].length > 0){
+        showToast("Сначала удалите все статьи в категории");
+        return;
+      }
+      delete state.data.expenses[catToDelete];
+      scheduleSaveMonth();
+      render();
+      showToast("Категория удалена");
     } else if (action === "delete-item"){
       var id = btn.dataset.id;
       var lists = [
