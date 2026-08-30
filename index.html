@@ -371,11 +371,21 @@
   .toast{
     position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
     background:var(--accent-deep);color:#fff;
-    padding:8px 16px;border-radius:20px;font-size:12.5px;
+    padding:8px 10px 8px 16px;border-radius:20px;font-size:12.5px;
     opacity:0;pointer-events:none;transition:opacity 0.25s;
-    z-index:50;
+    z-index:150;
+    display:flex;align-items:center;gap:10px;
+    max-width:calc(100vw - 32px);
+    white-space:nowrap;
   }
-  .toast.show{opacity:1;}
+  .toast.show{opacity:1;pointer-events:auto;}
+  .toast-undo{
+    background:rgba(255,255,255,0.15);color:#fff;
+    border:none;border-radius:14px;padding:5px 12px;
+    font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+    flex:0 0 auto;
+  }
+  .toast-undo:active{background:rgba(255,255,255,0.28);}
   .empty{padding:16px 12px;font-size:13px;color:var(--ink-soft);text-align:center;}
 </style>
 </head>
@@ -575,9 +585,32 @@
   }
   function showToast(msg){
     var t = document.getElementById("toast");
+    clearTimeout(t._undoTimer);
+    t.innerHTML = "";
     t.textContent = msg;
     t.classList.add("show");
     setTimeout(function(){ t.classList.remove("show"); }, 1800);
+  }
+  function showUndoToast(msg, onUndo){
+    var t = document.getElementById("toast");
+    clearTimeout(t._undoTimer);
+    var handled = false;
+    t.innerHTML = esc(msg) + ' <button class="toast-undo" id="toastUndoBtn">Отменить</button>';
+    t.classList.add("show");
+    document.getElementById("toastUndoBtn").addEventListener("click", function(){
+      if (handled) return;
+      handled = true;
+      clearTimeout(t._undoTimer);
+      t.classList.remove("show");
+      t.innerHTML = "";
+      onUndo();
+    });
+    t._undoTimer = setTimeout(function(){
+      if (handled) return;
+      handled = true;
+      t.classList.remove("show");
+      t.innerHTML = "";
+    }, 5000);
   }
   function currentMonthKey(){
     var d = new Date();
@@ -1193,12 +1226,44 @@
       scheduleSaveMonth(); render();
     } else if (action === "delete-item"){
       var id = btn.dataset.id;
-      var lists = [state.data.income, state.data.savings];
-      Object.keys(state.data.expenses).forEach(function(cat){ lists.push(state.data.expenses[cat]); });
-      lists.forEach(function(l){ removeItem(l, id); });
-      scheduleSaveMonth(); render();
+      var lists = [
+        {list: state.data.income, kind: "income"},
+        {list: state.data.savings, kind: "savings"}
+      ];
+      Object.keys(state.data.expenses).forEach(function(cat){
+        lists.push({list: state.data.expenses[cat], kind: "expense", cat: cat});
+      });
+
+      var removedInfo = null;
+      for (var li = 0; li < lists.length; li++){
+        var arr = lists[li].list;
+        for (var k = 0; k < arr.length; k++){
+          if (arr[k].id === id){
+            removedInfo = {item: arr[k], index: k, kind: lists[li].kind, cat: lists[li].cat};
+            arr.splice(k, 1);
+            break;
+          }
+        }
+        if (removedInfo) break;
+      }
+      scheduleSaveMonth();
+      render();
+      if (removedInfo){
+        showUndoToast("Статья удалена", function(){ restoreDeletedItem(removedInfo); });
+      }
     }
   });
+
+  function restoreDeletedItem(info){
+    var arr = info.kind === "income" ? state.data.income
+      : info.kind === "savings" ? state.data.savings
+      : state.data.expenses[info.cat];
+    if (!arr) return;
+    var idx = Math.min(info.index, arr.length);
+    arr.splice(idx, 0, info.item);
+    scheduleSaveMonth();
+    render();
+  }
 
   /* ---------- quick add ---------- */
   var quickType = "expense";
