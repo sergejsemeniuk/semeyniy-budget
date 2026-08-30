@@ -169,7 +169,7 @@
   }
   .row-head{
     display:grid;
-    grid-template-columns:1fr 62px 62px 56px 24px;
+    grid-template-columns:1fr 70px 70px 24px;
     gap:6px;
     padding:6px 12px 2px;
     font-size:10px;
@@ -179,7 +179,7 @@
   }
   .row{
     display:grid;
-    grid-template-columns:1fr 62px 62px 56px 24px;
+    grid-template-columns:1fr 70px 70px 24px;
     gap:6px;
     align-items:center;
     padding:5px 12px;
@@ -198,16 +198,13 @@
   .row input:focus{outline:2px solid var(--accent);outline-offset:0;}
   .row.over{background:var(--negative-bg);}
   .row.over input[type=number]{background:#fff;}
-  .diff{font-size:12px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;}
-  .diff.pos{color:var(--positive);}
-  .diff.neg{color:var(--negative);}
   .del{
     background:none;border:none;color:var(--ink-soft);
     font-size:16px;cursor:pointer;padding:0;line-height:1;
   }
   .del:active{color:var(--negative);}
   .row-savings, .row-head-savings{
-    grid-template-columns:1fr 50px 50px 62px 48px 22px;
+    grid-template-columns:1fr 55px 55px 70px 22px;
   }
   .row-savings input[type=number]{font-size:12px;padding:4px 3px;}
   .row-savings input[data-field="balance"]{color:var(--savings);font-weight:700;}
@@ -567,16 +564,13 @@
   }
 
   function rowHTML(it, kind){
-    var diff = num(it.fact) - num(it.plan);
     var isExpense = kind === "expense";
     var over = isExpense && num(it.fact) > num(it.plan);
-    var diffClass = isExpense ? (over ? "neg" : "pos") : (diff >= 0 ? "pos" : "neg");
     var rowClass = "row" + (over ? " over" : "");
     return '<div class="'+rowClass+'" data-id="'+it.id+'">'
       + '<input type="text" data-field="name" data-id="'+it.id+'" value="'+esc(it.name)+'" placeholder="Статья">'
       + '<input type="number" step="0.01" inputmode="decimal" data-field="plan" data-id="'+it.id+'" value="'+it.plan+'">'
       + '<input type="number" step="0.01" inputmode="decimal" data-field="fact" data-id="'+it.id+'" value="'+it.fact+'">'
-      + '<span class="diff '+diffClass+'">'+fmtSigned(diff)+'</span>'
       + '<button class="del" data-action="delete-item" data-id="'+it.id+'" aria-label="Удалить">×</button>'
       + '</div>';
   }
@@ -589,7 +583,7 @@
     return '<div class="card">'
       + '<div class="card-head"><h3>'+esc(title)+'</h3>'
       + '<div class="totals"><span>план '+fmt(t.plan)+'</span><span>факт '+fmt(t.fact)+'</span></div></div>'
-      + (list.length ? '<div class="row-head"><span>Статья</span><span>План</span><span>Факт</span><span>Разн.</span><span></span></div>' : '')
+      + (list.length ? '<div class="row-head"><span>Статья</span><span>План</span><span>Факт</span><span></span></div>' : '')
       + rows
       + '<button class="add-row" data-action="'+addAction+'">+ '+esc(addLabel)+'</button>'
       + '</div>';
@@ -614,14 +608,11 @@
   }
 
   function savingsRowHTML(it){
-    var diff = num(it.fact) - num(it.plan);
-    var diffClass = diff >= 0 ? "pos" : "neg";
     return '<div class="row row-savings" data-id="'+it.id+'">'
       + '<input type="text" data-field="name" data-id="'+it.id+'" value="'+esc(it.name)+'" placeholder="Статья">'
       + '<input type="number" step="0.01" inputmode="decimal" data-field="plan" data-id="'+it.id+'" value="'+it.plan+'">'
       + '<input type="number" step="0.01" inputmode="decimal" data-field="fact" data-id="'+it.id+'" value="'+it.fact+'">'
       + '<input type="number" step="0.01" inputmode="decimal" data-field="balance" data-id="'+it.id+'" value="'+it.balance+'">'
-      + '<span class="diff '+diffClass+'">'+fmtSigned(diff)+'</span>'
       + '<button class="del" data-action="delete-item" data-id="'+it.id+'" aria-label="Удалить">×</button>'
       + '</div>';
   }
@@ -636,7 +627,7 @@
     return '<div class="card">'
       + '<div class="card-head"><h3>Отчисления на сбережения</h3>'
       + '<div class="totals"><span>план '+fmt(t.plan)+'</span><span>факт '+fmt(t.fact)+'</span><span>баланс '+fmt(bal)+'</span></div></div>'
-      + (list.length ? '<div class="row-head row-head-savings"><span>Статья</span><span>План</span><span>Факт</span><span>Баланс</span><span>Разн.</span><span></span></div>' : '')
+      + (list.length ? '<div class="row-head row-head-savings"><span>Статья</span><span>План</span><span>Факт</span><span>Баланс</span><span></span></div>' : '')
       + rows
       + '<button class="add-row" data-action="add-saving">+ Добавить статью</button>'
       + '</div>';
@@ -901,19 +892,11 @@
       item[field] = newVal;
     }
 
-    if (field === "plan" || field === "fact"){
+    if ((field === "plan" || field === "fact") && itemKind === "expense"){
       var row = el.closest(".row");
       if (row){
-        var diff = num(item.fact) - num(item.plan);
-        var span = row.querySelector(".diff");
-        span.textContent = fmtSigned(diff);
-        if (itemKind === "expense"){
-          var over = num(item.fact) > num(item.plan);
-          span.className = "diff " + (over ? "neg" : "pos");
-          row.classList.toggle("over", over);
-        } else {
-          span.className = "diff " + (diff >= 0 ? "pos" : "neg");
-        }
+        var over = num(item.fact) > num(item.plan);
+        row.classList.toggle("over", over);
       }
     }
 
