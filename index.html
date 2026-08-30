@@ -1205,6 +1205,7 @@
         expenses: carryOverExpenses(prevData.expenses),
         savings: carryOverSavings(prevData.savings)
       };
+      remote.months[key] = state.data;
       scheduleSaveMonth();
     }
     document.getElementById("addMonthPanel").style.display = "none";
