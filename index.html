@@ -1195,7 +1195,9 @@
       var savSum = sumList(prevData.savings);
       var leftover = incSum.fact - expSum.fact - savSum.fact;
 
-      var newIncome = carryOverList(prevData.income);
+      var newIncome = carryOverList(prevData.income).filter(function(it){
+        return it.name !== "Остаток с прошлого месяца";
+      });
       newIncome.push({id:uid(), name:"Остаток с прошлого месяца", plan:leftover, fact:leftover});
 
       state.data = {
