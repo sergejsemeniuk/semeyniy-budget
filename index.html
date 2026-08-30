@@ -1215,18 +1215,40 @@
     if (amount <= 0){ showToast("Введите сумму"); return; }
 
     var nameSel = document.getElementById("quickName");
-    var name = nameSel.value === "__new__"
+    var isNewName = nameSel.value === "__new__";
+    var name = isNewName
       ? document.getElementById("quickNameNew").value.trim()
       : nameSel.value;
     if (!name){ showToast("Введите статью"); return; }
 
     if (quickType === "income"){
-      state.data.income.push({id:uid(), name:name, plan:0, fact:amount});
+      var incomeItem = null;
+      if (!isNewName){
+        for (var i=0;i<state.data.income.length;i++){
+          if (state.data.income[i].name === name){ incomeItem = state.data.income[i]; break; }
+        }
+      }
+      if (incomeItem){
+        incomeItem.fact = num(incomeItem.fact) + amount;
+      } else {
+        state.data.income.push({id:uid(), name:name, plan:0, fact:amount});
+      }
     } else {
       var cats = Object.keys(state.data.expenses);
       if (!cats.length){ showToast("Сначала добавьте категорию расходов"); return; }
       var cat = document.getElementById("quickCategory").value || cats[0];
-      state.data.expenses[cat].push({id:uid(), name:name, plan:0, fact:amount});
+      var list = state.data.expenses[cat];
+      var expenseItem = null;
+      if (!isNewName){
+        for (var j=0;j<list.length;j++){
+          if (list[j].name === name){ expenseItem = list[j]; break; }
+        }
+      }
+      if (expenseItem){
+        expenseItem.fact = num(expenseItem.fact) + amount;
+      } else {
+        list.push({id:uid(), name:name, plan:0, fact:amount});
+      }
     }
     scheduleSaveMonth();
     closeQuickAdd();
