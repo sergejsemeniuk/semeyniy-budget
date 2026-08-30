@@ -295,6 +295,38 @@
     border:1px solid var(--line);border-radius:16px;cursor:pointer;
   }
   .year-pill.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+  /* ---------- Lock screen ---------- */
+  .app.locked{display:none;}
+  .lock-screen{
+    position:fixed;inset:0;z-index:200;
+    background:var(--bg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:24px;text-align:center;
+  }
+  .lock-screen.hidden{display:none;}
+  .lock-icon{
+    width:60px;height:60px;border-radius:18px;
+    background:var(--accent-deep);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:700;margin-bottom:18px;
+  }
+  .lock-title{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+  .lock-sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:26px;max-width:260px;}
+  .lock-input{
+    width:180px;text-align:center;font-size:26px;letter-spacing:14px;
+    padding:14px 10px 14px 24px;border:2px solid var(--line);border-radius:14px;
+    background:var(--card);color:var(--ink);margin-bottom:6px;
+    font-variant-numeric:tabular-nums;
+  }
+  .lock-input:focus{outline:none;border-color:var(--accent);}
+  .lock-input.error{border-color:var(--expense);}
+  .lock-error{font-size:12px;color:var(--expense);min-height:16px;margin-bottom:14px;}
+  .lock-btn{
+    width:180px;padding:12px;border-radius:12px;
+    background:var(--accent);color:#fff;border:none;
+    font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  }
   .stats-toggle{
     display:flex;align-items:center;justify-content:space-between;
     width:100%;background:none;border:none;cursor:pointer;
@@ -348,7 +380,58 @@
 </style>
 </head>
 <body>
-<div class="app">
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-icon">€</div>
+  <div class="lock-title">Семейный бюджет</div>
+  <div class="lock-sub">Введите код доступа</div>
+  <input class="lock-input" id="lockInput" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off">
+  <div class="lock-error" id="lockError"></div>
+  <button class="lock-btn" id="lockBtn">Войти</button>
+</div>
+<script>
+(function(){
+  var PIN_CODE = "2293";
+  var LOCK_KEY = "familyBudgetUnlocked";
+  var lockScreen = document.getElementById("lockScreen");
+  var input = document.getElementById("lockInput");
+  var errorEl = document.getElementById("lockError");
+
+  var unlocked = false;
+  try{ unlocked = window.localStorage.getItem(LOCK_KEY) === "1"; }catch(e){}
+
+  if (unlocked){
+    lockScreen.classList.add("hidden");
+    document.getElementById("appRoot").classList.remove("locked");
+  } else {
+    input.focus();
+  }
+
+  function tryUnlock(){
+    if (input.value === PIN_CODE){
+      try{ window.localStorage.setItem(LOCK_KEY, "1"); }catch(e){}
+      lockScreen.classList.add("hidden");
+      document.getElementById("appRoot").classList.remove("locked");
+    } else {
+      input.classList.add("error");
+      errorEl.textContent = "Неверный код, попробуйте ещё раз";
+      input.value = "";
+      setTimeout(function(){ input.classList.remove("error"); }, 900);
+    }
+  }
+
+  document.getElementById("lockBtn").addEventListener("click", tryUnlock);
+  input.addEventListener("keydown", function(e){
+    if (e.key === "Enter") tryUnlock();
+  });
+  input.addEventListener("input", function(){
+    input.value = input.value.replace(/\D/g, "").slice(0, 4);
+    errorEl.textContent = "";
+    if (input.value.length === 4) tryUnlock();
+  });
+})();
+</script>
+
+<div class="app locked" id="appRoot">
   <header class="app-header">
     <div class="header-top">
       <div class="header-title">
