@@ -13,168 +13,133 @@
 <meta name="theme-color" content="#152722">
 <style>
   :root{
-    --cover:#152722;
-    --cover-2:#0d1a17;
-    --paper:#EEF0E5;
-    --paper-2:#E2E6D6;
-    --card:#F8F9F1;
-    --ink:#1C2620;
-    --ink-soft:#5B6659;
-    --line:#C9CDBB;
-    --brass:#AD8A4E;
-    --brass-deep:#8C6E38;
-    --positive:#2E6B4C;
-    --positive-bg:#E3EEE4;
-    --negative:#A6412F;
-    --negative-bg:#F5E5E0;
-    --white:#FBFAF4;
+    --bg:#F7F6F3;
+    --surface:#F1EEE8;
+    --card:#FFFFFF;
+    --ink:#2B2D42;
+    --ink-soft:#9A968C;
+    --line:#EAE7E0;
+    --accent:#2B2D42;
+    --accent-deep:#1C1D2C;
+    --income:#12A594;
+    --income-bg:#E3F5F2;
+    --expense:#E5484D;
+    --expense-bg:#FCE8E9;
+    --savings:#F5A623;
+    --savings-bg:#FDF2DE;
+    --positive:#12A594;
+    --positive-bg:#E3F5F2;
+    --negative:#E5484D;
+    --negative-bg:#FCE8E9;
+    --white:#FFFFFF;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--paper);
+    background:var(--bg);
     color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
     -webkit-font-smoothing:antialiased;
     padding-bottom:env(safe-area-inset-bottom);
   }
-  .app{max-width:560px;margin:0 auto;min-height:100vh;background:var(--paper);}
+  .app{max-width:560px;margin:0 auto;min-height:100vh;background:var(--bg);}
 
-  /* ---------- Cover / header ---------- */
-  .cover{
-    background:var(--cover);
-    background-image:linear-gradient(180deg, var(--cover) 0%, var(--cover-2) 100%);
-    color:var(--white);
-    padding:22px 20px 16px;
-    position:relative;
-    border-bottom:3px solid var(--brass);
+  /* ---------- Header ---------- */
+  .app-header{
+    position:relative;overflow:hidden;
+    margin:14px 14px 0;padding:18px 18px 16px;
+    background:linear-gradient(160deg,#FFFFFF 0%,#FBF9F6 100%);
+    -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+    border:1px solid var(--line);border-radius:24px;
+    box-shadow:0 1px 2px rgba(43,45,66,0.04), 0 16px 30px rgba(43,45,66,0.08);
   }
-  .cover-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
-  .cover h1{
-    font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;
-    font-size:22px;
-    font-weight:600;
-    margin:0 0 2px;
-    letter-spacing:0.2px;
+  .header-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;}
+  .header-title{display:flex;flex-direction:column;gap:2px;}
+  .app-name{font-size:14.5px;font-weight:700;color:var(--ink);}
+  .app-month{font-size:11.5px;color:var(--ink-soft);text-transform:capitalize;}
+  .month-btn{
+    width:36px;height:36px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--surface);border:1px solid var(--line);
+    color:var(--ink-soft);cursor:pointer;padding:0;
   }
-  .cover .sub{
-    font-size:12.5px;
-    color:#C9D3C6;
-    letter-spacing:0.5px;
-    text-transform:uppercase;
-  }
-  .stamp{
-    flex:0 0 auto;
-    width:76px;height:76px;
-    border-radius:50%;
-    border:2px solid var(--brass);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    transform:rotate(-8deg);
-    font-family:Georgia,serif;
-    background:rgba(255,255,255,0.03);
-  }
-  .stamp .amt{font-size:13px;font-weight:700;line-height:1.1;}
-  .stamp .lbl{font-size:8px;letter-spacing:0.5px;text-transform:uppercase;margin-top:2px;opacity:0.9;}
-  .stamp.pos{border-color:#7fbf9a;}
-  .stamp.pos .amt,.stamp.pos .lbl{color:#9fdcb6;}
-  .stamp.neg{border-color:#d98b7a;}
-  .stamp.neg .amt,.stamp.neg .lbl{color:#f0aa9a;}
+  .month-btn:active{background:var(--line);}
+  .month-btn svg{width:17px;height:17px;}
 
-  /* Month tabs */
-  .month-row{display:flex;align-items:center;gap:8px;margin-top:16px;}
+  .flow-row{position:relative;z-index:1;display:flex;gap:16px;margin-top:18px;}
+  .flow-item{flex:1;display:flex;flex-direction:column;gap:3px;}
+  .flow-label{font-size:11px;color:var(--ink-soft);font-weight:600;}
+  .flow-value{font-size:21px;font-weight:700;letter-spacing:-0.3px;font-variant-numeric:tabular-nums;}
+  .flow-value.income{color:var(--income);}
+  .flow-value.expense{color:var(--expense);}
+
+  .balance-card{
+    position:relative;z-index:1;overflow:hidden;
+    margin-top:16px;padding:14px 16px;border-radius:18px;
+    background:var(--accent-deep);
+    display:flex;align-items:center;color:#fff;
+  }
+  .balance-item{flex:1;display:flex;flex-direction:column;gap:2px;}
+  .balance-item span{
+    font-size:10px;color:rgba(255,255,255,0.62);
+    text-transform:uppercase;letter-spacing:0.3px;font-weight:600;
+  }
+  .balance-item strong{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.2px;}
+  .balance-item.savings strong{color:var(--savings);}
+  .balance-div{width:1px;align-self:stretch;background:rgba(255,255,255,0.16);margin:0 14px;}
+
+  .month-panel{position:relative;z-index:1;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
   .month-tabs{
-    display:flex;gap:6px;overflow-x:auto;flex:1;
-    padding-bottom:2px;
+    display:flex;gap:6px;overflow-x:auto;margin-bottom:8px;
     -webkit-overflow-scrolling:touch;
   }
   .month-tabs::-webkit-scrollbar{display:none;}
   .month-tab{
-    flex:0 0 auto;
-    padding:7px 12px;
-    font-size:12.5px;
-    font-weight:600;
-    color:#CBD4C8;
-    background:rgba(255,255,255,0.06);
-    border:1px solid rgba(255,255,255,0.12);
-    border-bottom:none;
-    border-radius:6px 6px 0 0;
-    cursor:pointer;
-    white-space:nowrap;
-    position:relative;
-    top:1px;
+    flex:0 0 auto;display:flex;align-items:center;gap:4px;
+    padding:6px 10px;font-size:12px;font-weight:600;
+    color:var(--ink-soft);background:var(--surface);
+    border:1px solid var(--line);border-radius:16px;
+    cursor:pointer;white-space:nowrap;
   }
-  .month-tab.active{
-    background:var(--paper);
-    color:var(--ink);
-    border-color:var(--paper);
+  .month-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .pill-btn{
+    border:1px dashed var(--ink-soft);color:var(--ink-soft);
+    background:transparent;border-radius:16px;
+    padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;
   }
-  .icon-btn{
-    flex:0 0 auto;
-    width:30px;height:30px;
-    border-radius:50%;
-    border:1px solid rgba(255,255,255,0.3);
-    background:transparent;
-    color:var(--white);
-    font-size:16px;
-    line-height:1;
-    cursor:pointer;
-  }
-  .icon-btn:active{background:rgba(255,255,255,0.15);}
   .del-month{
-    margin-left:2px;
-    font-size:11px;
-    color:#e0b8ac;
-    background:none;border:none;cursor:pointer;
-    padding:0 2px;
+    margin-left:1px;font-size:11px;color:#c98a90;
+    background:none;border:none;cursor:pointer;padding:0 2px;
   }
-  .del-month.armed{
-    color:#ffffff;
-    background:var(--negative);
-    border-radius:3px;
-    padding:1px 4px;
-  }
-  .add-month-panel{
-    display:flex;gap:8px;margin-top:10px;align-items:center;
-  }
+  .del-month.armed{color:#fff;background:var(--negative);border-radius:3px;padding:1px 4px;}
+  .add-month-panel{display:flex;gap:8px;margin-top:10px;align-items:center;}
   .add-month-panel input[type=month]{
-    flex:1;border:1px solid rgba(255,255,255,0.3);border-radius:6px;
-    background:rgba(255,255,255,0.08);color:var(--white);
+    flex:1;border:1px solid var(--line);border-radius:6px;
+    background:var(--card);color:var(--ink);
     padding:7px 8px;font-size:13px;
   }
   .add-month-panel button{
-    border:1px solid var(--brass);color:var(--white);
-    background:transparent;border-radius:6px;padding:7px 12px;
+    border:1px solid var(--ink);color:var(--ink);
+    background:var(--card);border-radius:6px;padding:7px 12px;
     font-size:12.5px;font-weight:600;cursor:pointer;
   }
-  .add-month-panel button.ghost{
-    border-color:rgba(255,255,255,0.3);color:#CBD4C8;
-  }
+  .add-month-panel button.ghost{border-color:var(--line);color:var(--ink-soft);}
 
-  /* ---------- Section nav ---------- */
+  /* ---------- Section nav (pill style) ---------- */
   .section-tabs{
-    display:flex;
-    background:var(--paper);
-    border-bottom:1px solid var(--line);
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
+    display:flex;gap:4px;
+    margin:14px 14px 0;padding:4px;
+    background:var(--surface);border-radius:999px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
   }
   .section-tabs::-webkit-scrollbar{display:none;}
   .section-tabs button{
-    flex:0 0 auto;
-    padding:12px 14px;
-    font-size:13px;
-    font-weight:600;
-    color:var(--ink-soft);
-    background:none;
-    border:none;
-    border-bottom:3px solid transparent;
-    cursor:pointer;
-    white-space:nowrap;
+    flex:1 0 auto;padding:9px 14px;
+    font-size:12.5px;font-weight:600;color:var(--ink-soft);
+    background:none;border:none;border-radius:999px;
+    cursor:pointer;white-space:nowrap;
   }
-  .section-tabs button.active{
-    color:var(--ink);
-    border-bottom-color:var(--brass);
-  }
+  .section-tabs button.active{background:var(--accent);color:#fff;}
 
   main{padding:16px 16px 40px;}
 
@@ -182,20 +147,20 @@
   .card{
     background:var(--card);
     border:1px solid var(--line);
-    border-radius:8px;
+    border-radius:16px;
     margin-bottom:14px;
     overflow:hidden;
+    box-shadow:0 1px 2px rgba(43,45,66,0.03);
   }
   .card-head{
     display:flex;align-items:center;justify-content:space-between;
     padding:10px 12px;
-    background:var(--paper-2);
+    background:var(--surface);
     border-bottom:1px solid var(--line);
   }
   .card-head h3{
     margin:0;font-size:13.5px;font-weight:700;
-    font-family:Georgia,serif;
-    letter-spacing:0.2px;
+    letter-spacing:0.1px;
   }
   .card-head .totals{
     font-size:11.5px;color:var(--ink-soft);
@@ -230,12 +195,12 @@
     padding:4px 4px;width:100%;text-align:right;
     font-variant-numeric:tabular-nums;
   }
-  .row input:focus{outline:2px solid var(--brass);outline-offset:0;}
+  .row input:focus{outline:2px solid var(--accent);outline-offset:0;}
   .diff{font-size:12px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;}
   .diff.pos{color:var(--positive);}
   .diff.neg{color:var(--negative);}
   .del{
-    background:none;border:none;color:#b3a892;
+    background:none;border:none;color:var(--ink-soft);
     font-size:16px;cursor:pointer;padding:0;line-height:1;
   }
   .del:active{color:var(--negative);}
@@ -243,14 +208,15 @@
     grid-template-columns:1fr 50px 50px 62px 48px 22px;
   }
   .row-savings input[type=number]{font-size:12px;padding:4px 3px;}
+  .row-savings input[data-field="balance"]{color:var(--savings);font-weight:700;}
   .add-row{
     display:flex;align-items:center;gap:6px;
     padding:9px 12px;border-top:1px solid var(--line);
-    font-size:12.5px;color:var(--brass-deep);
+    font-size:12.5px;color:var(--ink);
     background:none;border-left:none;border-right:none;border-bottom:none;
     width:100%;text-align:left;cursor:pointer;font-weight:600;
   }
-  .add-row:active{background:var(--paper-2);}
+  .add-row:active{background:var(--surface);}
 
   .add-category{
     display:flex;gap:8px;margin-top:4px;
@@ -260,7 +226,7 @@
     padding:9px 10px;font-size:13px;background:var(--card);color:var(--ink);
   }
   .add-category button{
-    border:1px solid var(--brass);color:var(--brass-deep);
+    border:1px solid var(--ink);color:var(--ink);
     background:var(--card);border-radius:6px;padding:0 14px;
     font-size:13px;font-weight:600;cursor:pointer;
   }
@@ -268,11 +234,12 @@
   /* Summary */
   .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
   .metric{
-    background:var(--card);border:1px solid var(--line);border-radius:8px;
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
     padding:12px;
+    box-shadow:0 1px 2px rgba(43,45,66,0.03);
   }
   .metric .lbl{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;}
-  .metric .val{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;font-family:Georgia,serif;}
+  .metric .val{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;}
   .metric .val.pos{color:var(--positive);}
   .metric .val.neg{color:var(--negative);}
   .breakdown-row{
@@ -289,7 +256,7 @@
   }
   .toast{
     position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
-    background:var(--cover);color:var(--white);
+    background:var(--accent-deep);color:#fff;
     padding:8px 16px;border-radius:20px;font-size:12.5px;
     opacity:0;pointer-events:none;transition:opacity 0.25s;
     z-index:50;
@@ -300,25 +267,52 @@
 </head>
 <body>
 <div class="app">
-  <header class="cover">
-    <div class="cover-top">
-      <div>
-        <h1>Семейный бюджет</h1>
-        <div class="sub" id="monthLabel">—</div>
+  <header class="app-header">
+    <div class="header-top">
+      <div class="header-title">
+        <span class="app-name">Семейный бюджет</span>
+        <span class="app-month" id="monthLabel">—</span>
       </div>
-      <div class="stamp" id="stamp">
-        <div class="amt" id="stampAmt">—</div>
-        <div class="lbl" id="stampLbl">баланс</div>
+      <button class="month-btn" id="monthMenuBtn" aria-label="Месяцы">
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M3.5 9.5h17" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-item">
+        <span class="flow-label">Доходы</span>
+        <strong class="flow-value income" id="statIncome">0,00 €</strong>
+      </div>
+      <div class="flow-item">
+        <span class="flow-label">Расходы</span>
+        <strong class="flow-value expense" id="statExpense">0,00 €</strong>
       </div>
     </div>
-    <div class="month-row">
+
+    <div class="balance-card">
+      <div class="balance-item">
+        <span>Итог месяца</span>
+        <strong id="netValue">0,00 €</strong>
+      </div>
+      <div class="balance-div"></div>
+      <div class="balance-item savings">
+        <span>Остаток после сбережений</span>
+        <strong id="mainBalance">0,00 €</strong>
+      </div>
+    </div>
+
+    <div class="month-panel" id="monthPanel" style="display:none;">
       <div class="month-tabs" id="monthTabs"></div>
-      <button class="icon-btn" id="addMonthBtn" title="Добавить месяц" aria-label="Добавить месяц">+</button>
-    </div>
-    <div class="add-month-panel" id="addMonthPanel" style="display:none;">
-      <input type="month" id="newMonthInput">
-      <button id="newMonthConfirm">Добавить</button>
-      <button id="newMonthCancel" class="ghost">Отмена</button>
+      <button class="pill-btn" id="addMonthBtn" title="Добавить месяц" aria-label="Добавить месяц">+ Месяц</button>
+      <div class="add-month-panel" id="addMonthPanel" style="display:none;">
+        <input type="month" id="newMonthInput">
+        <button id="newMonthConfirm">Добавить</button>
+        <button id="newMonthCancel" class="ghost">Отмена</button>
+      </div>
     </div>
   </header>
 
@@ -546,17 +540,20 @@
       }
       wrap.appendChild(btn);
     });
-    document.getElementById("monthLabel").textContent = monthLabel(state.month) + " · план / факт";
+    document.getElementById("monthLabel").textContent = monthLabel(state.month);
   }
 
-  function renderStamp(){
-    var inc = sumList(state.data.income).fact;
-    var exp = totalExpenses().fact;
-    var net = inc - exp;
-    var stamp = document.getElementById("stamp");
-    stamp.className = "stamp " + (net >= 0 ? "pos" : "neg");
-    document.getElementById("stampAmt").textContent = fmt(Math.abs(net));
-    document.getElementById("stampLbl").textContent = net >= 0 ? "профицит" : "дефицит";
+  function renderHeaderStats(){
+    var incFact = sumList(state.data.income).fact;
+    var expFact = totalExpenses().fact;
+    var savFact = sumList(state.data.savings).fact;
+    var net = incFact - expFact;
+    var leftover = net - savFact;
+
+    document.getElementById("statIncome").textContent = fmt(incFact);
+    document.getElementById("statExpense").textContent = fmt(expFact);
+    document.getElementById("netValue").textContent = fmtSigned(net);
+    document.getElementById("mainBalance").textContent = fmtSigned(leftover);
   }
 
   function rowHTML(it, extraCols){
@@ -666,7 +663,7 @@
 
   function render(){
     renderMonthTabs();
-    renderStamp();
+    renderHeaderStats();
     document.querySelectorAll("#sectionTabs button").forEach(function(b){
       b.classList.toggle("active", b.dataset.tab === state.tab);
     });
@@ -698,6 +695,11 @@
 
   var armedDeleteMonth = null;
   var armedDeleteTimer = null;
+
+  document.getElementById("monthMenuBtn").addEventListener("click", function(){
+    var panel = document.getElementById("monthPanel");
+    panel.style.display = (panel.style.display === "none") ? "block" : "none";
+  });
 
   document.getElementById("monthTabs").addEventListener("click", async function(e){
     var delBtn = e.target.closest('[data-action="delete-month"]');
@@ -833,8 +835,8 @@
       }
     }
 
-    // Update header totals + stamp without a full re-render (keeps focus)
-    renderStamp();
+    // Update header totals + balance without a full re-render (keeps focus)
+    renderHeaderStats();
     updateHeadTotals();
     scheduleSaveMonth();
   });
