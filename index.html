@@ -633,17 +633,8 @@
     var inc = sumList(state.data.income);
     var exp = totalExpenses();
     var sav = sumList(state.data.savings);
-    var net = inc.fact - exp.fact;
-    var leftover = net - sav.fact;
 
-    var html = '<div class="metric-grid">'
-      + '<div class="metric"><div class="lbl">Доходы (факт)</div><div class="val">'+fmt(inc.fact)+'</div></div>'
-      + '<div class="metric"><div class="lbl">Расходы (факт)</div><div class="val">'+fmt(exp.fact)+'</div></div>'
-      + '<div class="metric"><div class="lbl">Итог месяца</div><div class="val '+(net>=0?"pos":"neg")+'">'+fmtSigned(net)+'</div></div>'
-      + '<div class="metric"><div class="lbl">Остаток после сбережений</div><div class="val '+(leftover>=0?"pos":"neg")+'">'+fmtSigned(leftover)+'</div></div>'
-      + '</div>';
-
-    html += '<div class="card">'
+    var html = '<div class="card">'
       + '<div class="card-head"><h3>Расходы по категориям</h3><div class="totals"><span>план / факт</span></div></div>';
     Object.keys(state.data.expenses).forEach(function(cat){
       var s = sumList(state.data.expenses[cat]);
@@ -767,12 +758,14 @@
     var m = val && val.match(/^(\d{4})-(\d{2})$/);
     if (!m){ showToast("Выберите месяц"); return; }
     var key = m[1] + "-" + m[2];
-    var isNew = state.meta.months.indexOf(key) === -1;
-    var prevData = isNew ? await getPrevMonthData(key) : null;
-    if (isNew){
-      state.meta.months.push(key);
-      state.meta.months.sort();
+    if (state.meta.months.indexOf(key) !== -1){
+      showToast(monthLabel(key) + " уже добавлен");
+      return;
     }
+    var isNew = true;
+    var prevData = await getPrevMonthData(key);
+    state.meta.months.push(key);
+    state.meta.months.sort();
     state.meta.current = key;
     await saveMeta();
     state.month = key;
