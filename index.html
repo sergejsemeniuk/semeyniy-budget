@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Семейный бюджет</title>
+<style>
+  :root{
+    --cover:#152722;
+    --cover-2:#0d1a17;
+    --paper:#EEF0E5;
+    --paper-2:#E2E6D6;
+    --card:#F8F9F1;
+    --ink:#1C2620;
+    --ink-soft:#5B6659;
+    --line:#C9CDBB;
+    --brass:#AD8A4E;
+    --brass-deep:#8C6E38;
+    --positive:#2E6B4C;
+    --positive-bg:#E3EEE4;
+    --negative:#A6412F;
+    --negative-bg:#F5E5E0;
+    --white:#FBFAF4;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .app{max-width:560px;margin:0 auto;min-height:100vh;background:var(--paper);}
+
+  /* ---------- Cover / header ---------- */
+  .cover{
+    background:var(--cover);
+    background-image:linear-gradient(180deg, var(--cover) 0%, var(--cover-2) 100%);
+    color:var(--white);
+    padding:22px 20px 16px;
+    position:relative;
+    border-bottom:3px solid var(--brass);
+  }
+  .cover-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .cover h1{
+    font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;
+    font-size:22px;
+    font-weight:600;
+    margin:0 0 2px;
+    letter-spacing:0.2px;
+  }
+  .cover .sub{
+    font-size:12.5px;
+    color:#C9D3C6;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+  }
+  .stamp{
+    flex:0 0 auto;
+    width:76px;height:76px;
+    border-radius:50%;
+    border:2px solid var(--brass);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    transform:rotate(-8deg);
+    font-family:Georgia,serif;
+    background:rgba(255,255,255,0.03);
+  }
+  .stamp .amt{font-size:13px;font-weight:700;line-height:1.1;}
+  .stamp .lbl{font-size:8px;letter-spacing:0.5px;text-transform:uppercase;margin-top:2px;opacity:0.9;}
+  .stamp.pos{border-color:#7fbf9a;}
+  .stamp.pos .amt,.stamp.pos .lbl{color:#9fdcb6;}
+  .stamp.neg{border-color:#d98b7a;}
+  .stamp.neg .amt,.stamp.neg .lbl{color:#f0aa9a;}
+
+  /* Month tabs */
+  .month-row{display:flex;align-items:center;gap:8px;margin-top:16px;}
+  .month-tabs{
+    display:flex;gap:6px;overflow-x:auto;flex:1;
+    padding-bottom:2px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .month-tabs::-webkit-scrollbar{display:none;}
+  .month-tab{
+    flex:0 0 auto;
+    padding:7px 12px;
+    font-size:12.5px;
+    font-weight:600;
+    color:#CBD4C8;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12);
+    border-bottom:none;
+    border-radius:6px 6px 0 0;
+    cursor:pointer;
+    white-space:nowrap;
+    position:relative;
+    top:1px;
+  }
+  .month-tab.active{
+    background:var(--paper);
+    color:var(--ink);
+    border-color:var(--paper);
+  }
+  .icon-btn{
+    flex:0 0 auto;
+    width:30px;height:30px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,0.3);
+    background:transparent;
+    color:var(--white);
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+  }
+  .icon-btn:active{background:rgba(255,255,255,0.15);}
+  .del-month{
+    margin-left:2px;
+    font-size:11px;
+    color:#e0b8ac;
+    background:none;border:none;cursor:pointer;
+    padding:0 2px;
+  }
+  .del-month.armed{
+    color:#ffffff;
+    background:var(--negative);
+    border-radius:3px;
+    padding:1px 4px;
+  }
+  .add-month-panel{
+    display:flex;gap:8px;margin-top:10px;align-items:center;
+  }
+  .add-month-panel input[type=month]{
+    flex:1;border:1px solid rgba(255,255,255,0.3);border-radius:6px;
+    background:rgba(255,255,255,0.08);color:var(--white);
+    padding:7px 8px;font-size:13px;
+  }
+  .add-month-panel button{
+    border:1px solid var(--brass);color:var(--white);
+    background:transparent;border-radius:6px;padding:7px 12px;
+    font-size:12.5px;font-weight:600;cursor:pointer;
+  }
+  .add-month-panel button.ghost{
+    border-color:rgba(255,255,255,0.3);color:#CBD4C8;
+  }
+
+  /* ---------- Section nav ---------- */
+  .section-tabs{
+    display:flex;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .section-tabs::-webkit-scrollbar{display:none;}
+  .section-tabs button{
+    flex:0 0 auto;
+    padding:12px 14px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    border-bottom:3px solid transparent;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .section-tabs button.active{
+    color:var(--ink);
+    border-bottom-color:var(--brass);
+  }
+
+  main{padding:16px 16px 40px;}
+
+  /* ---------- Cards / sections ---------- */
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:8px;
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .card-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 12px;
+    background:var(--paper-2);
+    border-bottom:1px solid var(--line);
+  }
+  .card-head h3{
+    margin:0;font-size:13.5px;font-weight:700;
+    font-family:Georgia,serif;
+    letter-spacing:0.2px;
+  }
+  .card-head .totals{
+    font-size:11.5px;color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+    display:flex;gap:8px;
+  }
+  .row-head{
+    display:grid;
+    grid-template-columns:1fr 62px 62px 56px 24px;
+    gap:6px;
+    padding:6px 12px 2px;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:var(--ink-soft);
+  }
+  .row{
+    display:grid;
+    grid-template-columns:1fr 62px 62px 56px 24px;
+    gap:6px;
+    align-items:center;
+    padding:5px 12px;
+    border-top:1px solid var(--line);
+  }
+  .row input[type=text]{
+    border:none;background:transparent;font-size:13px;color:var(--ink);
+    padding:4px 2px;width:100%;font-family:inherit;
+  }
+  .row input[type=number]{
+    border:1px solid var(--line);background:var(--white);
+    border-radius:4px;font-size:12.5px;color:var(--ink);
+    padding:4px 4px;width:100%;text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .row input:focus{outline:2px solid var(--brass);outline-offset:0;}
+  .diff{font-size:12px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;}
+  .diff.pos{color:var(--positive);}
+  .diff.neg{color:var(--negative);}
+  .del{
+    background:none;border:none;color:#b3a892;
+    font-size:16px;cursor:pointer;padding:0;line-height:1;
+  }
+  .del:active{color:var(--negative);}
+  .row-savings, .row-head-savings{
+    grid-template-columns:1fr 50px 50px 62px 48px 22px;
+  }
+  .row-savings input[type=number]{font-size:12px;padding:4px 3px;}
+  .add-row{
+    display:flex;align-items:center;gap:6px;
+    padding:9px 12px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--brass-deep);
+    background:none;border-left:none;border-right:none;border-bottom:none;
+    width:100%;text-align:left;cursor:pointer;font-weight:600;
+  }
+  .add-row:active{background:var(--paper-2);}
+
+  .add-category{
+    display:flex;gap:8px;margin-top:4px;
+  }
+  .add-category input{
+    flex:1;border:1px solid var(--line);border-radius:6px;
+    padding:9px 10px;font-size:13px;background:var(--card);color:var(--ink);
+  }
+  .add-category button{
+    border:1px solid var(--brass);color:var(--brass-deep);
+    background:var(--card);border-radius:6px;padding:0 14px;
+    font-size:13px;font-weight:600;cursor:pointer;
+  }
+
+  /* Summary */
+  .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .metric{
+    background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:12px;
+  }
+  .metric .lbl{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;}
+  .metric .val{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;font-family:Georgia,serif;}
+  .metric .val.pos{color:var(--positive);}
+  .metric .val.neg{color:var(--negative);}
+  .breakdown-row{
+    display:flex;justify-content:space-between;
+    padding:7px 12px;border-top:1px solid var(--line);
+    font-size:13px;
+  }
+  .breakdown-row .name{color:var(--ink);}
+  .breakdown-row .nums{font-variant-numeric:tabular-nums;color:var(--ink-soft);}
+
+  .footnote{
+    font-size:11px;color:var(--ink-soft);text-align:center;
+    padding:10px 20px 4px;line-height:1.5;
+  }
+  .toast{
+    position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+    background:var(--cover);color:var(--white);
+    padding:8px 16px;border-radius:20px;font-size:12.5px;
+    opacity:0;pointer-events:none;transition:opacity 0.25s;
+    z-index:50;
+  }
+  .toast.show{opacity:1;}
+  .empty{padding:16px 12px;font-size:13px;color:var(--ink-soft);text-align:center;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="cover">
+    <div class="cover-top">
+      <div>
+        <h1>Семейный бюджет</h1>
+        <div class="sub" id="monthLabel">—</div>
+      </div>
+      <div class="stamp" id="stamp">
+        <div class="amt" id="stampAmt">—</div>
+        <div class="lbl" id="stampLbl">баланс</div>
+      </div>
+    </div>
+    <div class="month-row">
+      <div class="month-tabs" id="monthTabs"></div>
+      <button class="icon-btn" id="addMonthBtn" title="Добавить месяц" aria-label="Добавить месяц">+</button>
+    </div>
+    <div class="add-month-panel" id="addMonthPanel" style="display:none;">
+      <input type="month" id="newMonthInput">
+      <button id="newMonthConfirm">Добавить</button>
+      <button id="newMonthCancel" class="ghost">Отмена</button>
+    </div>
+  </header>
+
+  <nav class="section-tabs" id="sectionTabs">
+    <button data-tab="summary" class="active">Обзор</button>
+    <button data-tab="income">Доходы</button>
+    <button data-tab="expenses">Расходы</button>
+    <button data-tab="savings">Сбережения</button>
+  </nav>
+
+  <main id="content"></main>
+
+  <div class="footnote">Данные синхронизируются через общий облачный аккаунт — доступ есть только у тех, кто знает секретный код приложения.</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot }
+    from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyCNi4LOyxqvFeUNLAztSjchCSYmGZstoVw",
+    authDomain: "family-budget-9228d.firebaseapp.com",
+    projectId: "family-budget-9228d",
+    storageBucket: "family-budget-9228d.firebasestorage.app",
+    messagingSenderId: "598217894316",
+    appId: "1:598217894316:web:aac1b3f491e0b4b5e47209"
+  };
+  var SECRET_CODE = "semya-2026-xk93jd";
+
+  var fbApp = initializeApp(firebaseConfig);
+  var db = getFirestore(fbApp);
+  var docRef = doc(db, "budgets", SECRET_CODE);
+
+  (function(){
+  "use strict";
+
+  var remote = null;
+  var lastSavedPayload = null;
+
+  var state = { meta: null, month: null, data: null, tab: "summary" };
+  var saveTimers = {};
+
+  /* ---------- helpers ---------- */
+  function uid(){
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+  }
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+  function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
+  function fmt(n){
+    return (n < 0 ? "-" : "") + Math.abs(n).toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €";
+  }
+  function fmtSigned(n){
+    return (n >= 0 ? "+" : "-") + Math.abs(n).toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €";
+  }
+  function showToast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(function(){ t.classList.remove("show"); }, 1800);
+  }
+  function currentMonthKey(){
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+  }
+  var MONTH_NAMES = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+  function monthLabel(key){
+    var parts = key.split("-");
+    var y = parts[0], m = parseInt(parts[1],10) - 1;
+    return MONTH_NAMES[m] + " " + y;
+  }
+
+  /* ---------- default data ---------- */
+  function items(names){
+    return names.map(function(n){ return {id:uid(), name:n, plan:0, fact:0}; });
+  }
+  function savingsItems(names){
+    return names.map(function(n){ return {id:uid(), name:n, plan:0, fact:0, balance:0}; });
+  }
+  function carryOverSavings(prevList){
+    return prevList.map(function(it){
+      return {id:uid(), name:it.name, plan:0, fact:0, balance:num(it.balance)};
+    });
+  }
+  function carryOverList(prevList){
+    return prevList.map(function(it){
+      return {id:uid(), name:it.name, plan:0, fact:0};
+    });
+  }
+  function carryOverExpenseList(prevList){
+    return prevList.map(function(it){
+      return {id:uid(), name:it.name, plan:num(it.fact), fact:0};
+    });
+  }
+  function carryOverExpenses(prevExpenses){
+    var out = {};
+    Object.keys(prevExpenses).forEach(function(cat){
+      out[cat] = carryOverExpenseList(prevExpenses[cat]);
+    });
+    return out;
+  }
+  function defaultMonthData(){
+    return {
+      income: items(["Зарплата 1","Зарплата 2","Доход с Ирл","Другие"]),
+      expenses: {
+        "Дом": items(["Кредит","Страховка дома","Страховка квартиры","Электричество","Вода","Телефоны","Интернет","Другие"]),
+        "Транспорт": items(["Топливо","Страховка","Общественный транспорт","Другие"]),
+        "Жизнь": items(["Продукты","Еда вне дома","Одежда","Красота","Подписки","Другие"]),
+        "Здоровье": items(["Страховка жизни","Зал","Медицина","Лекарства","Другие"]),
+        "Отдых": items(["Билеты","Гостиницы","Еда","Сувениры","Другие"]),
+        "Развлечения": items(["Развлечения","Подарки","Другие"])
+      },
+      savings: savingsItems(["Подушка","Инвестиции","Долг","Другие"])
+    };
+  }
+
+  /* ---------- storage (Firebase Firestore) ---------- */
+  function defaultRemote(){
+    var key = currentMonthKey();
+    var months = {};
+    months[key] = defaultMonthData();
+    return { meta: { months:[key], current:key }, months: months };
+  }
+  async function fetchRemote(){
+    try{
+      var snap = await getDoc(docRef);
+      if (snap.exists()) return JSON.parse(snap.data().payload);
+      return null;
+    }catch(e){ return null; }
+  }
+  async function persistRemote(){
+    try{
+      var payload = JSON.stringify(remote);
+      lastSavedPayload = payload;
+      await setDoc(docRef, { payload: payload, updatedAt: Date.now() });
+    }catch(e){ showToast("Не удалось сохранить онлайн"); }
+  }
+  async function loadMeta(){
+    remote = await fetchRemote();
+    if (!remote){
+      remote = defaultRemote();
+      await persistRemote();
+    }
+    return remote.meta;
+  }
+  async function saveMeta(){
+    scheduleSaveMonth();
+  }
+  async function loadMonth(key){
+    if (!remote.months[key]){
+      remote.months[key] = defaultMonthData();
+      scheduleSaveMonth();
+    }
+    return remote.months[key];
+  }
+  function scheduleSaveMonth(){
+    clearTimeout(saveTimers.all);
+    saveTimers.all = setTimeout(persistRemote, 400);
+  }
+  function subscribeRealtime(){
+    try{
+      onSnapshot(docRef, function(snap){
+        if (!snap.exists()) return;
+        var payload = snap.data().payload;
+        if (payload === lastSavedPayload) return;
+        var active = document.activeElement;
+        if (active && active.tagName === "INPUT") return;
+        try{
+          remote = JSON.parse(payload);
+          lastSavedPayload = payload;
+          state.meta = remote.meta;
+          if (!remote.months[state.month]) state.month = state.meta.current || state.meta.months[0];
+          state.data = remote.months[state.month];
+          render();
+        }catch(e){}
+      });
+    }catch(e){}
+  }
+
+  /* ---------- computed totals ---------- */
+  function sumList(list){
+    var plan=0, fact=0;
+    list.forEach(function(it){ plan += num(it.plan); fact += num(it.fact); });
+    return {plan:plan, fact:fact};
+  }
+  function sumBalance(list){
+    var b = 0;
+    list.forEach(function(it){ b += num(it.balance); });
+    return b;
+  }
+  function totalExpenses(dataObj){
+    dataObj = dataObj || state.data;
+    var plan=0, fact=0;
+    Object.keys(dataObj.expenses).forEach(function(cat){
+      var s = sumList(dataObj.expenses[cat]);
+      plan += s.plan; fact += s.fact;
+    });
+    return {plan:plan, fact:fact};
+  }
+  /* ---------- rendering ---------- */
+  function renderMonthTabs(){
+    var wrap = document.getElementById("monthTabs");
+    wrap.innerHTML = "";
+    state.meta.months.forEach(function(key){
+      var btn = document.createElement("div");
+      btn.className = "month-tab" + (key === state.month ? " active" : "");
+      btn.dataset.month = key;
+      var label = document.createElement("span");
+      label.textContent = monthLabel(key);
+      btn.appendChild(label);
+      if (state.meta.months.length > 1){
+        var del = document.createElement("button");
+        del.className = "del-month";
+        del.textContent = "×";
+        del.dataset.action = "delete-month";
+        del.dataset.month = key;
+        btn.appendChild(del);
+      }
+      wrap.appendChild(btn);
+    });
+    document.getElementById("monthLabel").textContent = monthLabel(state.month) + " · план / факт";
+  }
+
+  function renderStamp(){
+    var inc = sumList(state.data.income).fact;
+    var exp = totalExpenses().fact;
+    var net = inc - exp;
+    var stamp = document.getElementById("stamp");
+    stamp.className = "stamp " + (net >= 0 ? "pos" : "neg");
+    document.getElementById("stampAmt").textContent = fmt(Math.abs(net));
+    document.getElementById("stampLbl").textContent = net >= 0 ? "профицит" : "дефицит";
+  }
+
+  function rowHTML(it, extraCols){
+    var diff = num(it.fact) - num(it.plan);
+    var diffClass = diff >= 0 ? "pos" : "neg";
+    return '<div class="row" data-id="'+it.id+'">'
+      + '<input type="text" data-field="name" data-id="'+it.id+'" value="'+esc(it.name)+'" placeholder="Статья">'
+      + '<input type="number" step="0.01" inputmode="decimal" data-field="plan" data-id="'+it.id+'" value="'+it.plan+'">'
+      + '<input type="number" step="0.01" inputmode="decimal" data-field="fact" data-id="'+it.id+'" value="'+it.fact+'">'
+      + '<span class="diff '+diffClass+'">'+fmtSigned(diff)+'</span>'
+      + '<button class="del" data-action="delete-item" data-id="'+it.id+'" aria-label="Удалить">×</button>'
+      + '</div>';
+  }
+
+  function listCardHTML(title, list, addAction, addLabel){
+    var t = sumList(list);
+    var rows = list.length
+      ? list.map(function(it){ return rowHTML(it); }).join("")
+      : '<div class="empty">Пока нет статей</div>';
+    return '<div class="card">'
+      + '<div class="card-head"><h3>'+esc(title)+'</h3>'
+      + '<div class="totals"><span>план '+fmt(t.plan)+'</span><span>факт '+fmt(t.fact)+'</span></div></div>'
+      + (list.length ? '<div class="row-head"><span>Статья</span><span>План</span><span>Факт</span><span>Разн.</span><span></span></div>' : '')
+      + rows
+      + '<button class="add-row" data-action="'+addAction+'">+ '+esc(addLabel)+'</button>'
+      + '</div>';
+  }
+
+  function renderIncome(){
+    return listCardHTML("Доходы", state.data.income, "add-income", "Добавить доход");
+  }
+
+  function renderExpenses(){
+    var html = "";
+    Object.keys(state.data.expenses).forEach(function(cat){
+      html += listCardHTML(cat, state.data.expenses[cat], "add-expense", "Добавить статью");
+      html = html.replace(/data-action="add-expense"(?![^>]*data-cat)/, 'data-action="add-expense" data-cat="'+esc(cat)+'"');
+    });
+    html += '<div class="card" style="padding:12px;">'
+      + '<div class="add-category">'
+      + '<input type="text" id="newCatInput" placeholder="Новая категория расходов">'
+      + '<button data-action="add-category">Добавить</button>'
+      + '</div></div>';
+    return html;
+  }
+
+  function savingsRowHTML(it){
+    var diff = num(it.fact) - num(it.plan);
+    var diffClass = diff >= 0 ? "pos" : "neg";
+    return '<div class="row row-savings" data-id="'+it.id+'">'
+      + '<input type="text" data-field="name" data-id="'+it.id+'" value="'+esc(it.name)+'" placeholder="Статья">'
+      + '<input type="number" step="0.01" inputmode="decimal" data-field="plan" data-id="'+it.id+'" value="'+it.plan+'">'
+      + '<input type="number" step="0.01" inputmode="decimal" data-field="fact" data-id="'+it.id+'" value="'+it.fact+'">'
+      + '<input type="number" step="0.01" inputmode="decimal" data-field="balance" data-id="'+it.id+'" value="'+it.balance+'">'
+      + '<span class="diff '+diffClass+'">'+fmtSigned(diff)+'</span>'
+      + '<button class="del" data-action="delete-item" data-id="'+it.id+'" aria-label="Удалить">×</button>'
+      + '</div>';
+  }
+
+  function renderSavings(){
+    var list = state.data.savings;
+    var t = sumList(list);
+    var bal = sumBalance(list);
+    var rows = list.length
+      ? list.map(function(it){ return savingsRowHTML(it); }).join("")
+      : '<div class="empty">Пока нет статей</div>';
+    return '<div class="card">'
+      + '<div class="card-head"><h3>Отчисления на сбережения</h3>'
+      + '<div class="totals"><span>план '+fmt(t.plan)+'</span><span>факт '+fmt(t.fact)+'</span><span>баланс '+fmt(bal)+'</span></div></div>'
+      + (list.length ? '<div class="row-head row-head-savings"><span>Статья</span><span>План</span><span>Факт</span><span>Баланс</span><span>Разн.</span><span></span></div>' : '')
+      + rows
+      + '<button class="add-row" data-action="add-saving">+ Добавить статью</button>'
+      + '</div>';
+  }
+
+  function renderSummary(){
+    var inc = sumList(state.data.income);
+    var exp = totalExpenses();
+    var sav = sumList(state.data.savings);
+    var net = inc.fact - exp.fact;
+    var leftover = net - sav.fact;
+
+    var html = '<div class="metric-grid">'
+      + '<div class="metric"><div class="lbl">Доходы (факт)</div><div class="val">'+fmt(inc.fact)+'</div></div>'
+      + '<div class="metric"><div class="lbl">Расходы (факт)</div><div class="val">'+fmt(exp.fact)+'</div></div>'
+      + '<div class="metric"><div class="lbl">Итог месяца</div><div class="val '+(net>=0?"pos":"neg")+'">'+fmtSigned(net)+'</div></div>'
+      + '<div class="metric"><div class="lbl">Остаток после сбережений</div><div class="val '+(leftover>=0?"pos":"neg")+'">'+fmtSigned(leftover)+'</div></div>'
+      + '</div>';
+
+    html += '<div class="card">'
+      + '<div class="card-head"><h3>Расходы по категориям</h3><div class="totals"><span>план / факт</span></div></div>';
+    Object.keys(state.data.expenses).forEach(function(cat){
+      var s = sumList(state.data.expenses[cat]);
+      html += '<div class="breakdown-row"><span class="name">'+esc(cat)+'</span><span class="nums">'+fmt(s.plan)+' → '+fmt(s.fact)+'</span></div>';
+    });
+    html += '</div>';
+
+    html += '<div class="card">'
+      + '<div class="card-head"><h3>Сбережения</h3></div>'
+      + '<div class="breakdown-row"><span class="name">План</span><span class="nums">'+fmt(sav.plan)+'</span></div>'
+      + '<div class="breakdown-row"><span class="name">Отчислено (факт)</span><span class="nums">'+fmt(sav.fact)+'</span></div>'
+      + '<div class="breakdown-row"><span class="name">Текущий баланс накоплений</span><span class="nums" style="font-weight:700;">'+fmt(sumBalance(state.data.savings))+'</span></div>'
+      + '</div>';
+
+    return html;
+  }
+
+  function render(){
+    renderMonthTabs();
+    renderStamp();
+    document.querySelectorAll("#sectionTabs button").forEach(function(b){
+      b.classList.toggle("active", b.dataset.tab === state.tab);
+    });
+    var content = document.getElementById("content");
+    if (state.tab === "summary") content.innerHTML = renderSummary();
+    else if (state.tab === "income") content.innerHTML = renderIncome();
+    else if (state.tab === "expenses") content.innerHTML = renderExpenses();
+    else if (state.tab === "savings") content.innerHTML = renderSavings();
+  }
+
+  /* ---------- mutation helpers ---------- */
+  function findItem(list, id){
+    for (var i=0;i<list.length;i++){ if (list[i].id === id) return list[i]; }
+    return null;
+  }
+  function removeItem(list, id){
+    var idx = -1;
+    for (var i=0;i<list.length;i++){ if (list[i].id === id){ idx=i; break; } }
+    if (idx > -1) list.splice(idx,1);
+  }
+
+  /* ---------- events ---------- */
+  document.getElementById("sectionTabs").addEventListener("click", function(e){
+    var btn = e.target.closest("button[data-tab]");
+    if (!btn) return;
+    state.tab = btn.dataset.tab;
+    render();
+  });
+
+  var armedDeleteMonth = null;
+  var armedDeleteTimer = null;
+
+  document.getElementById("monthTabs").addEventListener("click", async function(e){
+    var delBtn = e.target.closest('[data-action="delete-month"]');
+    if (delBtn){
+      e.stopPropagation();
+      var key = delBtn.dataset.month;
+      if (armedDeleteMonth !== key){
+        armedDeleteMonth = key;
+        clearTimeout(armedDeleteTimer);
+        armedDeleteTimer = setTimeout(function(){ armedDeleteMonth = null; render(); }, 3000);
+        delBtn.textContent = "удалить?";
+        delBtn.classList.add("armed");
+        return;
+      }
+      clearTimeout(armedDeleteTimer);
+      armedDeleteMonth = null;
+      var idx = state.meta.months.indexOf(key);
+      if (idx > -1) state.meta.months.splice(idx,1);
+      if (state.meta.current === key) state.meta.current = state.meta.months[0];
+      await saveMeta();
+      state.month = state.meta.current;
+      state.data = await loadMonth(state.month);
+      showToast("Месяц удалён");
+      render();
+      return;
+    }
+    var tab = e.target.closest(".month-tab");
+    if (!tab) return;
+    var key = tab.dataset.month;
+    if (key === state.month) return;
+    state.month = key;
+    state.meta.current = key;
+    await saveMeta();
+    state.data = await loadMonth(key);
+    render();
+  });
+
+  document.getElementById("addMonthBtn").addEventListener("click", function(){
+    var panel = document.getElementById("addMonthPanel");
+    var open = panel.style.display !== "none";
+    if (open){
+      panel.style.display = "none";
+    } else {
+      document.getElementById("newMonthInput").value = currentMonthKey();
+      panel.style.display = "flex";
+      document.getElementById("newMonthInput").focus();
+    }
+  });
+
+  document.getElementById("newMonthCancel").addEventListener("click", function(){
+    document.getElementById("addMonthPanel").style.display = "none";
+  });
+
+  async function getPrevMonthData(beforeKey){
+    var earlier = state.meta.months.filter(function(k){ return k < beforeKey; }).sort();
+    if (!earlier.length) return null;
+    var prevKey = earlier[earlier.length - 1];
+    if (prevKey === state.month) return state.data;
+    try{ return await loadMonth(prevKey); }
+    catch(e){ return null; }
+  }
+
+  document.getElementById("newMonthConfirm").addEventListener("click", async function(){
+    var val = document.getElementById("newMonthInput").value;
+    var m = val && val.match(/^(\d{4})-(\d{2})$/);
+    if (!m){ showToast("Выберите месяц"); return; }
+    var key = m[1] + "-" + m[2];
+    var isNew = state.meta.months.indexOf(key) === -1;
+    var prevData = isNew ? await getPrevMonthData(key) : null;
+    if (isNew){
+      state.meta.months.push(key);
+      state.meta.months.sort();
+    }
+    state.meta.current = key;
+    await saveMeta();
+    state.month = key;
+    state.data = await loadMonth(key);
+    if (isNew && prevData){
+      var incSum = sumList(prevData.income);
+      var expSum = totalExpenses(prevData);
+      var savSum = sumList(prevData.savings);
+      var leftover = incSum.fact - expSum.fact - savSum.fact;
+
+      var newIncome = carryOverList(prevData.income);
+      newIncome.push({id:uid(), name:"Остаток с прошлого месяца", plan:leftover, fact:leftover});
+
+      state.data = {
+        income: newIncome,
+        expenses: carryOverExpenses(prevData.expenses),
+        savings: carryOverSavings(prevData.savings)
+      };
+      scheduleSaveMonth();
+    }
+    document.getElementById("addMonthPanel").style.display = "none";
+    render();
+  });
+
+  document.getElementById("content").addEventListener("input", function(e){
+    var el = e.target;
+    var id = el.dataset.id;
+    var field = el.dataset.field;
+    if (!id || !field) return;
+
+    var lists = [state.data.income, state.data.savings];
+    Object.keys(state.data.expenses).forEach(function(cat){ lists.push(state.data.expenses[cat]); });
+
+    var item = null;
+    for (var i=0;i<lists.length;i++){ item = findItem(lists[i], id); if (item) break; }
+    if (!item) return;
+
+    if (field === "name") item.name = el.value;
+    else {
+      var newVal = el.value === "" ? 0 : num(el.value);
+      if (field === "fact" && Object.prototype.hasOwnProperty.call(item, "balance")){
+        var delta = newVal - num(item.fact);
+        item.balance = num(item.balance) + delta;
+        var row2 = el.closest(".row");
+        if (row2){
+          var balInput = row2.querySelector('input[data-field="balance"]');
+          if (balInput) balInput.value = item.balance;
+        }
+      }
+      item[field] = newVal;
+    }
+
+    if (field === "plan" || field === "fact"){
+      var row = el.closest(".row");
+      if (row){
+        var diff = num(item.fact) - num(item.plan);
+        var span = row.querySelector(".diff");
+        span.textContent = fmtSigned(diff);
+        span.className = "diff " + (diff >= 0 ? "pos" : "neg");
+      }
+    }
+
+    // Update header totals + stamp without a full re-render (keeps focus)
+    renderStamp();
+    updateHeadTotals();
+    scheduleSaveMonth();
+  });
+
+  function updateHeadTotals(){
+    document.querySelectorAll(".card").forEach(function(card){
+      var head = card.querySelector(".card-head .totals");
+      if (!head) return;
+      var h3 = card.querySelector(".card-head h3");
+      if (!h3) return;
+      var title = h3.textContent;
+      var list = null;
+      var isSavings = title === "Отчисления на сбережения";
+      if (title === "Доходы") list = state.data.income;
+      else if (isSavings) list = state.data.savings;
+      else if (state.data.expenses[title]) list = state.data.expenses[title];
+      if (list){
+        var t = sumList(list);
+        if (isSavings){
+          head.innerHTML = '<span>план '+fmt(t.plan)+'</span><span>факт '+fmt(t.fact)+'</span><span>баланс '+fmt(sumBalance(list))+'</span>';
+        } else {
+          head.innerHTML = '<span>план '+fmt(t.plan)+'</span><span>факт '+fmt(t.fact)+'</span>';
+        }
+      }
+    });
+  }
+
+  document.getElementById("content").addEventListener("click", async function(e){
+    var btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    var action = btn.dataset.action;
+
+    if (action === "add-income"){
+      state.data.income.push({id:uid(), name:"", plan:0, fact:0});
+      scheduleSaveMonth(); render();
+    } else if (action === "add-saving"){
+      state.data.savings.push({id:uid(), name:"", plan:0, fact:0, balance:0});
+      scheduleSaveMonth(); render();
+    } else if (action === "add-expense"){
+      var cat = btn.dataset.cat;
+      if (state.data.expenses[cat]) state.data.expenses[cat].push({id:uid(), name:"", plan:0, fact:0});
+      scheduleSaveMonth(); render();
+    } else if (action === "add-category"){
+      var input = document.getElementById("newCatInput");
+      var name = input.value.trim();
+      if (!name){ showToast("Введите название категории"); return; }
+      if (state.data.expenses[name]){ showToast("Такая категория уже есть"); return; }
+      state.data.expenses[name] = [];
+      scheduleSaveMonth(); render();
+    } else if (action === "delete-item"){
+      var id = btn.dataset.id;
+      var lists = [state.data.income, state.data.savings];
+      Object.keys(state.data.expenses).forEach(function(cat){ lists.push(state.data.expenses[cat]); });
+      lists.forEach(function(l){ removeItem(l, id); });
+      scheduleSaveMonth(); render();
+    }
+  });
+
+  /* ---------- init ---------- */
+  async function init(){
+    try{
+      state.meta = await loadMeta();
+      state.month = state.meta.current || state.meta.months[0];
+      state.data = await loadMonth(state.month);
+      render();
+      subscribeRealtime();
+    }catch(e){
+      document.getElementById("content").innerHTML = '<div class="empty">Не удалось загрузить данные. Обновите страницу.</div>';
+    }
+  }
+  init();
+  })();
+</script>
+</body>
+</html>
