@@ -1007,24 +1007,29 @@
     }).sort();
   }
   function computePeriodStats(monthKeys){
-    var totalIncome = 0, totalExpense = 0, totalSavings = 0;
+    var totalIncomeFull = 0, totalIncomeDisplay = 0, totalExpense = 0, totalSavings = 0;
     var best = null, worst = null;
     monthKeys.forEach(function(key){
       var d = remote.months[key];
       if (!d) return;
       var inc = sumList(d.income).fact;
+      var incDisplay = sumList(d.income.filter(function(it){
+        return it.name !== "Остаток с прошлого месяца";
+      })).fact;
       var exp = totalExpenses(d).fact;
       var sav = sumList(d.savings).fact;
       var leftover = inc - exp - sav;
-      totalIncome += inc; totalExpense += exp; totalSavings += sav;
+      totalIncomeFull += inc;
+      totalIncomeDisplay += incDisplay;
+      totalExpense += exp; totalSavings += sav;
       if (!best || leftover > best.leftover) best = {key:key, leftover:leftover};
       if (!worst || leftover < worst.leftover) worst = {key:key, leftover:leftover};
     });
     var count = monthKeys.length || 1;
     return {
-      totalIncome: totalIncome, totalExpense: totalExpense, totalSavings: totalSavings,
-      avgIncome: totalIncome / count, avgExpense: totalExpense / count,
-      totalLeftover: totalIncome - totalExpense - totalSavings,
+      totalIncome: totalIncomeDisplay, totalExpense: totalExpense, totalSavings: totalSavings,
+      avgIncome: totalIncomeDisplay / count, avgExpense: totalExpense / count,
+      totalLeftover: totalIncomeFull - totalExpense - totalSavings,
       best: best, worst: worst, count: monthKeys.length
     };
   }
