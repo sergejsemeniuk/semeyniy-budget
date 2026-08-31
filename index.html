@@ -817,6 +817,22 @@
         }catch(e){}
       });
     }catch(e){}
+
+    document.addEventListener("visibilitychange", async function(){
+      if (document.visibilityState !== "visible") return;
+      var active = document.activeElement;
+      if (active && active.tagName === "INPUT") return;
+      var fresh = await fetchRemote();
+      if (!fresh) return;
+      var freshPayload = JSON.stringify(fresh);
+      if (freshPayload === lastSavedPayload) return;
+      remote = fresh;
+      lastSavedPayload = freshPayload;
+      state.meta = remote.meta;
+      if (!remote.months[state.month]) state.month = state.meta.current || state.meta.months[0];
+      state.data = remote.months[state.month];
+      render();
+    });
   }
 
   /* ---------- computed totals ---------- */
