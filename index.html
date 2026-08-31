@@ -251,7 +251,7 @@
     border:none;background:transparent;font-size:13px;color:var(--ink);
     padding:4px 2px;width:100%;font-family:inherit;
   }
-  .row input[type=number]{
+  .row input.row-num{
     border:1px solid var(--line);background:var(--white);
     border-radius:4px;font-size:12.5px;color:var(--ink);
     padding:4px 4px;width:100%;text-align:right;
@@ -259,7 +259,7 @@
   }
   .row input:focus{outline:2px solid var(--accent);outline-offset:0;}
   .row.over{background:var(--negative-bg);}
-  .row.over input[type=number]{background:#fff;}
+  .row.over input.row-num{background:#fff;}
   .del{
     background:none;border:none;color:var(--ink-soft);
     font-size:16px;cursor:pointer;padding:0;line-height:1;
@@ -268,7 +268,7 @@
   .row-savings, .row-head-savings{
     grid-template-columns:1fr 55px 55px 70px 22px;
   }
-  .row-savings input[type=number]{font-size:12px;padding:4px 3px;}
+  .row-savings input.row-num{font-size:12px;padding:4px 3px;}
   .row-savings input[data-field="balance"]{color:var(--savings);font-weight:700;}
   .add-row{
     display:flex;align-items:center;gap:6px;
@@ -882,8 +882,8 @@
     var rowClass = "row" + (over ? " over" : "");
     return '<div class="'+rowClass+'" data-id="'+it.id+'">'
       + '<input type="text" data-field="name" data-id="'+it.id+'" value="'+esc(it.name)+'" placeholder="Статья">'
-      + '<input type="number" step="0.01" inputmode="decimal" data-field="plan" data-id="'+it.id+'" value="'+it.plan+'">'
-      + '<input type="number" step="0.01" inputmode="decimal" data-field="fact" data-id="'+it.id+'" value="'+it.fact+'">'
+      + '<input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="row-num" data-field="plan" data-id="'+it.id+'" value="'+it.plan+'">'
+      + '<input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="row-num" data-field="fact" data-id="'+it.id+'" value="'+it.fact+'">'
       + '<button class="del" data-action="delete-item" data-id="'+it.id+'" aria-label="Удалить">×</button>'
       + '</div>';
   }
@@ -926,9 +926,9 @@
   function savingsRowHTML(it){
     return '<div class="row row-savings" data-id="'+it.id+'">'
       + '<input type="text" data-field="name" data-id="'+it.id+'" value="'+esc(it.name)+'" placeholder="Статья">'
-      + '<input type="number" step="0.01" inputmode="decimal" data-field="plan" data-id="'+it.id+'" value="'+it.plan+'">'
-      + '<input type="number" step="0.01" inputmode="decimal" data-field="fact" data-id="'+it.id+'" value="'+it.fact+'">'
-      + '<input type="number" step="0.01" inputmode="decimal" data-field="balance" data-id="'+it.id+'" value="'+it.balance+'">'
+      + '<input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="row-num" data-field="plan" data-id="'+it.id+'" value="'+it.plan+'">'
+      + '<input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="row-num" data-field="fact" data-id="'+it.id+'" value="'+it.fact+'">'
+      + '<input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="row-num" data-field="balance" data-id="'+it.id+'" value="'+it.balance+'">'
       + '<button class="del" data-action="delete-item" data-id="'+it.id+'" aria-label="Удалить">×</button>'
       + '</div>';
   }
